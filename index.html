@@ -1,0 +1,3394 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Afycionados Test Drive — Simulador Interativo de USG Pélvico</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter e JetBrains Mono para estética médica de alta precisão -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            console: {
+              bg: '#070a0f',
+              panel: '#0e141f',
+              card: '#131b29',
+              border: '#1f2b3e',
+              hover: '#1a2538',
+            },
+            med: {
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Estilização refinada de console médico escuro */
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      background-color: #070a0f;
+      color: #e2e8f0;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbars discretas e clínicas */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1019;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #233046;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334766;
+    }
+
+    /* Sliders customizados estilo console de ultrassom */
+    input[type="range"].usg-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #1a2436;
+      border-radius: 9999px;
+      outline: none;
+      border: 1px solid #26354d;
+    }
+    input[type="range"].usg-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #06b6d4;
+      border: 2px solid #cffafe;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.55);
+      cursor: pointer;
+      transition: transform 0.12s ease, background-color 0.12s ease;
+    }
+    input[type="range"].usg-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      background: #22d3ee;
+    }
+    input[type="range"].usg-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #06b6d4;
+      border: 2px solid #cffafe;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.55);
+      cursor: pointer;
+    }
+
+    /* Efeito de pulso para o indicador LIVE */
+    @keyframes pulseLive {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+    .dot-live {
+      animation: pulseLive 1.4s infinite ease-in-out;
+    }
+
+    /* Cursor especial sobre o canvas do USG */
+    .usg-canvas-grab { cursor: grab; }
+    .usg-canvas-grab:active { cursor: grabbing; }
+    .usg-canvas-crosshair { cursor: crosshair; }
+
+    /* Garante que o layout desktop 1366x768 aproveite perfeitamente a altura */
+    @media (min-width: 1024px) {
+      .console-main-grid {
+        height: calc(100vh - 58px);
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-console-bg text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- ==================== CABEÇALHO COMPACTO ==================== -->
+  <header class="h-[58px] shrink-0 bg-console-panel/95 backdrop-blur border-b border-console-border px-3 sm:px-5 flex items-center justify-between gap-3 z-30">
+    <!-- Marca e Subtítulo -->
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/25 to-emerald-500/20 border border-cyan-500/40 flex items-center justify-center shrink-0 shadow-inner">
+        <!-- Ícone SVG de sonda de ultrassom / ondas -->
+        <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12a8 8 0 0 1 16 0" />
+          <path d="M7.5 14.5a4.5 4.5 0 0 1 9 0" />
+          <circle cx="12" cy="17" r="2" fill="currentColor" />
+          <path d="M12 4v2" />
+        </svg>
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm sm:text-base font-bold tracking-tight text-white truncate">Afycionados Test Drive</h1>
+          <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+            USG PÉLVICO 2D
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 truncate">Simulador Interativo de Ultrassonografia Pélvica para Medicina</p>
+      </div>
+    </div>
+
+    <!-- Indicador de Modo Ativo + Ações -->
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <!-- Pill de Modo -->
+      <div id="modeBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
+        <span id="modeBadgeDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="modeBadgeText">Estudo Livre</span>
+      </div>
+
+      <!-- Botão de Reset -->
+      <button id="btnResetAll" type="button" title="Restaurar parâmetros padrão do simulador"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-console-card hover:bg-console-hover border border-console-border text-slate-200 text-xs font-medium transition-colors active:scale-[0.98]">
+        <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+        <span class="hidden sm:inline">Resetar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== ÁREA PRINCIPAL DO CONSOLE ==================== -->
+  <main class="console-main-grid flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 min-h-0">
+
+    <!-- ==================== COLUNA ESQUERDA/CENTRO: MONITOR + KNOBOLOGY ==================== -->
+    <section class="lg:col-span-7 xl:col-span-8 flex flex-col gap-2.5 min-h-0">
+
+      <!-- MONITOR DE ULTRASSOM -->
+      <div id="monitorWrapper" class="relative flex-1 min-h-[360px] lg:min-h-0 bg-black rounded-2xl border border-console-border shadow-2xl overflow-hidden flex flex-col select-none">
+
+        <!-- HUD Clínico Superior do Monitor -->
+        <div class="absolute top-0 inset-x-0 z-20 pointer-events-none px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 bg-gradient-to-b from-black/90 via-black/55 to-transparent font-mono text-[11px]">
+          <div class="flex items-center flex-wrap gap-x-3 gap-y-1 text-slate-300">
+            <span class="text-cyan-400 font-bold tracking-wider">AFYCIONADOS•MED</span>
+            <span id="hudRoute" class="text-white font-semibold">SUPRAPÚBICA (TA)</span>
+            <span class="text-slate-600">|</span>
+            <span id="hudPlane" class="text-emerald-300 font-semibold">SAGITAL</span>
+            <span class="hidden sm:inline text-slate-600">|</span>
+            <span id="hudFreq" class="hidden sm:inline text-slate-300">4.0 MHz</span>
+            <span id="hudDepth" class="text-slate-300">D: 14.0 cm</span>
+            <span id="hudGain" class="text-slate-300">G: 62%</span>
+          </div>
+
+          <div class="flex items-center gap-2.5">
+            <span id="hudDopplerTag" class="hidden px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/50 text-rose-300 text-[10px] font-bold">CFM ON</span>
+            <span id="hudCaliperTag" class="hidden px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[10px] font-bold">CALIPER</span>
+            <span id="hudStatusPill" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-[10px]">
+              <span id="hudStatusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 dot-live"></span>
+              <span id="hudStatusText">LIVE</span>
+              <span id="hudFps" class="text-emerald-400/80 ml-0.5">60</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Canvas Principal do Ultrassom -->
+        <canvas id="usgCanvas" class="w-full h-full block usg-canvas-grab touch-none"></canvas>
+
+        <!-- Barra de Status / Instrução Rápida no Canto Inferior Esquerdo do Monitor -->
+        <div id="monitorHint" class="absolute bottom-2.5 left-3 z-20 pointer-events-none flex items-center gap-2 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur border border-slate-800/90 text-[11px] text-slate-300 max-w-[62%]">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0"></span>
+          <span id="monitorHintText" class="truncate">Arraste na imagem para varrer/angular • Clique numa estrutura para estudar</span>
+        </div>
+
+        <!-- Mini-Diagrama Anatômico Esquemático 2D Sincronizado (Canto Inferior Direito do Monitor) -->
+        <div id="miniDiagramCard" class="absolute bottom-2.5 right-10 sm:right-12 z-20 w-[142px] sm:w-[168px] bg-console-panel/90 backdrop-blur-md border border-console-border rounded-xl p-1.5 shadow-xl pointer-events-none">
+          <div class="flex items-center justify-between px-1 mb-0.5">
+            <span class="text-[9px] font-mono uppercase tracking-wider text-cyan-300 font-semibold">Orientação 2D</span>
+            <span id="miniDiagramPlaneLabel" class="text-[9px] font-mono text-slate-400">SAG • MID</span>
+          </div>
+          <canvas id="diagramCanvas" width="160" height="92" class="w-full h-[80px] sm:h-[90px] rounded-lg bg-[#080d16] block"></canvas>
+        </div>
+
+        <!-- Banner Flutuante de Toast / Feedback no Monitor -->
+        <div id="toastBanner" class="hidden absolute top-11 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-xl bg-console-panel/95 border border-cyan-500/40 text-xs text-cyan-100 shadow-lg backdrop-blur-md transition-all">
+        </div>
+      </div>
+
+      <!-- BARRA INFERIOR DE KNOBOLOGY (CONTROLES DO APARELHO) -->
+      <div class="shrink-0 bg-console-panel border border-console-border rounded-2xl p-2.5 sm:p-3 flex flex-col gap-2.5">
+        <!-- Linha 1: Sliders de Física do Aparelho -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4">
+          <!-- Ganho -->
+          <div class="bg-console-card/80 border border-console-border/70 rounded-xl px-3 py-2">
+            <div class="flex items-center justify-between text-[11px] mb-1.5">
+              <span class="font-medium text-slate-300">Ganho <span class="text-slate-500">(Gain)</span></span>
+              <span id="valGain" class="font-mono font-semibold text-cyan-300">62%</span>
+            </div>
+            <input id="sliderGain" type="range" min="15" max="100" value="62" class="usg-slider" />
+          </div>
+
+          <!-- Profundidade -->
+          <div class="bg-console-card/80 border border-console-border/70 rounded-xl px-3 py-2">
+            <div class="flex items-center justify-between text-[11px] mb-1.5">
+              <span class="font-medium text-slate-300">Profundidade <span class="text-slate-500">(Depth)</span></span>
+              <span id="valDepth" class="font-mono font-semibold text-cyan-300">14.0 cm</span>
+            </div>
+            <input id="sliderDepth" type="range" min="8" max="18" step="0.5" value="14" class="usg-slider" />
+          </div>
+
+          <!-- Frequência -->
+          <div class="bg-console-card/80 border border-console-border/70 rounded-xl px-3 py-2">
+            <div class="flex items-center justify-between text-[11px] mb-1.5">
+              <span class="font-medium text-slate-300">Frequência <span class="text-slate-500">(MHz)</span></span>
+              <span id="valFreq" class="font-mono font-semibold text-cyan-300">4.0 MHz</span>
+            </div>
+            <input id="sliderFreq" type="range" min="3.0" max="5.0" step="0.5" value="4.0" class="usg-slider" />
+          </div>
+        </div>
+
+        <!-- Linha 2: Botões Táteis do Console -->
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <!-- FREEZE -->
+            <button id="btnFreeze" type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] bg-console-card border-console-border text-slate-200 hover:bg-console-hover">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07" />
+              </svg>
+              <span>Freeze</span>
+            </button>
+
+            <!-- DOPPLER COLORIDO -->
+            <button id="btnDoppler" type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] bg-console-card border-console-border text-slate-200 hover:bg-console-hover">
+              <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-rose-500 to-blue-500"></span>
+              <span>Doppler Colorido</span>
+            </button>
+
+            <!-- PAQUÍMETRO (CALIPER) -->
+            <button id="btnCaliper" type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] bg-console-card border-console-border text-slate-200 hover:bg-console-hover">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 6H3M21 18H3M6 6v4M10 6v2M14 6v4M18 6v2M6 18v-4M14 18v-4" />
+              </svg>
+              <span>Paquímetro</span>
+            </button>
+
+            <!-- LIMPAR MEDIÇÕES (visível quando há medições) -->
+            <button id="btnClearMeasure" type="button"
+              class="hidden inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium border border-amber-500/35 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all">
+              <span>Limpar Medidas</span>
+            </button>
+          </div>
+
+          <!-- SOBREPOSIÇÃO ANATÔMICA (GABARITO) -->
+          <button id="btnOverlay" type="button"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] bg-console-card border-console-border text-slate-200 hover:bg-console-hover">
+            <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span>Sobreposição Anatômica</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== COLUNA DIREITA: PAINEL COM ABAS ==================== -->
+    <aside class="lg:col-span-5 xl:col-span-4 bg-console-panel border border-console-border rounded-2xl flex flex-col min-h-[520px] lg:min-h-0 overflow-hidden">
+
+      <!-- Navegação por Abas -->
+      <nav class="shrink-0 grid grid-cols-3 gap-1 p-1.5 bg-[#0a0f18] border-b border-console-border" role="tablist">
+        <button id="tabBtnControls" type="button" role="tab" aria-selected="true"
+          class="tab-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all bg-cyan-500/15 text-cyan-300 border border-cyan-500/35">
+          Transdutor
+        </button>
+        <button id="tabBtnAtlas" type="button" role="tab" aria-selected="false"
+          class="tab-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-slate-200 border border-transparent">
+          Atlas Anatômico
+        </button>
+        <button id="tabBtnQuiz" type="button" role="tab" aria-selected="false"
+          class="tab-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-slate-200 border border-transparent flex items-center justify-center gap-1">
+          <span>Modo Desafio</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        </button>
+      </nav>
+
+      <!-- CONTEÚDO DAS ABAS (com scroll interno suave) -->
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3.5">
+
+        <!-- ==================== ABA 1: TRANSDUTOR & CENÁRIO ==================== -->
+        <div id="panelControls" class="space-y-3.5">
+
+          <!-- Via de Exame + Plano de Corte -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Via de Exame -->
+            <div class="bg-console-card border border-console-border rounded-xl p-2.5">
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Via de Exame</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button id="btnRouteTA" type="button"
+                  class="px-2 py-2 rounded-lg text-xs font-semibold border transition-all bg-cyan-500/20 border-cyan-400/60 text-cyan-200">
+                  Suprapúbica
+                  <span class="block text-[10px] font-mono opacity-80">3–5 MHz</span>
+                </button>
+                <button id="btnRouteTV" type="button"
+                  class="px-2 py-2 rounded-lg text-xs font-semibold border transition-all bg-console-panel border-console-border text-slate-400 hover:text-slate-200">
+                  Transvaginal
+                  <span class="block text-[10px] font-mono opacity-80">5–9 MHz</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Plano de Corte -->
+            <div class="bg-console-card border border-console-border rounded-xl p-2.5">
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Plano de Corte</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button id="btnPlaneSag" type="button"
+                  class="px-2 py-2 rounded-lg text-xs font-semibold border transition-all bg-emerald-500/20 border-emerald-400/60 text-emerald-200">
+                  Sagital
+                  <span class="block text-[10px] font-mono opacity-80">Longitudinal</span>
+                </button>
+                <button id="btnPlaneTrans" type="button"
+                  class="px-2 py-2 rounded-lg text-xs font-semibold border transition-all bg-console-panel border-console-border text-slate-400 hover:text-slate-200">
+                  Transversal
+                  <span class="block text-[10px] font-mono opacity-80">Axial</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Varredura em Tempo Real (Sweep & Tilt) -->
+          <div class="bg-console-card border border-console-border rounded-xl p-3 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-cyan-300">Varredura do Transdutor</span>
+              <button id="btnCenterProbe" type="button" class="text-[11px] text-slate-400 hover:text-cyan-300 underline decoration-dotted">Centralizar</button>
+            </div>
+
+            <!-- Deslocamento (Sweep) -->
+            <div>
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span id="labelSweepTitle" class="font-medium text-slate-200">Varredura Látero-Lateral</span>
+                <span id="valSweep" class="font-mono text-xs font-semibold text-cyan-300">Linha Média (0)</span>
+              </div>
+              <input id="sliderSweep" type="range" min="-100" max="100" value="0" class="usg-slider" />
+              <div id="sweepAxisTicks" class="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
+                <span>← Ovário Esq.</span>
+                <span>Linha Média</span>
+                <span>Ovário Dir. →</span>
+              </div>
+            </div>
+
+            <!-- Angulação (Fanning / Tilt) -->
+            <div>
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="font-medium text-slate-200">Angulação / Inclinação <span class="text-slate-500">(Tilt)</span></span>
+                <span id="valTilt" class="font-mono text-xs font-semibold text-cyan-300">0°</span>
+              </div>
+              <input id="sliderTilt" type="range" min="-40" max="40" value="0" class="usg-slider" />
+              <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
+                <span>-40° Caudal/Inf.</span>
+                <span>Neutro (0°)</span>
+                <span>+40° Cranial/Sup.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modulação Fisiológica e Clínica -->
+          <div class="bg-console-card border border-console-border rounded-xl p-3 space-y-3">
+            <span class="block text-[11px] font-semibold uppercase tracking-wider text-emerald-300">Modulação Fisiológica &amp; Clínica</span>
+
+            <!-- Fase do Ciclo Menstrual -->
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">Fase do Ciclo Menstrual</label>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button id="btnPhaseProlif" type="button"
+                  class="px-2 py-2 rounded-lg text-[11px] font-semibold border transition-all bg-console-panel border-console-border text-slate-400 hover:text-slate-200 text-center">
+                  Proliferativa
+                  <span class="block text-[10px] font-mono opacity-75">~4 mm</span>
+                </button>
+                <button id="btnPhasePeriov" type="button"
+                  class="px-2 py-2 rounded-lg text-[11px] font-semibold border transition-all bg-cyan-500/20 border-cyan-400/60 text-cyan-200 text-center">
+                  Periovulatória
+                  <span class="block text-[10px] font-mono opacity-75">Trilam ~10mm</span>
+                </button>
+                <button id="btnPhaseSecret" type="button"
+                  class="px-2 py-2 rounded-lg text-[11px] font-semibold border transition-all bg-console-panel border-console-border text-slate-400 hover:text-slate-200 text-center">
+                  Secretora
+                  <span class="block text-[10px] font-mono opacity-75">~13.5 mm</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Posição Uterina + Repleção Vesical -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <!-- Posição Uterina -->
+              <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Posição Uterina</label>
+                <div class="grid grid-cols-2 gap-1">
+                  <button id="btnPosAVF" type="button"
+                    class="py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all bg-emerald-500/20 border-emerald-400/60 text-emerald-200">
+                    AVF
+                  </button>
+                  <button id="btnPosRVF" type="button"
+                    class="py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all bg-console-panel border-console-border text-slate-400 hover:text-slate-200">
+                    RVF
+                  </button>
+                </div>
+              </div>
+
+              <!-- Repleção Vesical -->
+              <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Repleção Vesical</label>
+                <div class="grid grid-cols-2 gap-1">
+                  <button id="btnBladderFull" type="button"
+                    class="py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all bg-cyan-500/20 border-cyan-400/60 text-cyan-200">
+                    Cheia
+                  </button>
+                  <button id="btnBladderEmpty" type="button"
+                    class="py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all bg-console-panel border-console-border text-slate-400 hover:text-slate-200">
+                    Vazia
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nota Clínica Contextual Dinâmica -->
+          <div id="clinicalContextBox" class="rounded-xl p-3 bg-cyan-950/35 border border-cyan-500/25 text-xs text-slate-300 leading-relaxed">
+            <div class="flex items-center gap-1.5 font-semibold text-cyan-300 mb-1">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
+              </svg>
+              <span>Correlação Morfofisiológica</span>
+            </div>
+            <p id="clinicalContextText">Carregando análise do corte atual...</p>
+          </div>
+        </div>
+
+        <!-- ==================== ABA 2: ATLAS ANATÔMICO ==================== -->
+        <div id="panelAtlas" class="hidden space-y-3">
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Selecione uma estrutura abaixo ou <strong class="text-cyan-300">clique diretamente no monitor</strong> para destacar sua anatomia ultrassonográfica e revisar pontos de referência.
+          </p>
+
+          <!-- Lista de Estruturas -->
+          <div id="atlasList" class="grid grid-cols-2 gap-1.5">
+            <!-- Populado dinamicamente via JS -->
+          </div>
+
+          <!-- Cartão Didático Detalhado da Estrutura Selecionada -->
+          <div id="atlasDetailCard" class="bg-console-card border border-console-border rounded-xl p-3.5 space-y-2.5">
+            <!-- Populado dinamicamente via JS -->
+          </div>
+        </div>
+
+        <!-- ==================== ABA 3: MODO DESAFIO ==================== -->
+        <div id="panelQuiz" class="hidden space-y-3">
+          <!-- Placar e Progresso -->
+          <div class="bg-console-card border border-console-border rounded-xl p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-3">
+                <div>
+                  <span class="block text-[10px] uppercase font-mono text-slate-400">Pontuação</span>
+                  <span id="quizScore" class="text-lg font-mono font-bold text-cyan-300">0</span>
+                </div>
+                <div class="h-7 w-px bg-console-border"></div>
+                <div>
+                  <span class="block text-[10px] uppercase font-mono text-slate-400">Sequência</span>
+                  <span id="quizStreak" class="text-lg font-mono font-bold text-emerald-400">0 🔥</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="block text-[10px] uppercase font-mono text-slate-400">Questão</span>
+                <span id="quizProgressText" class="text-xs font-mono font-semibold text-slate-200">1 / 10</span>
+              </div>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-console-panel overflow-hidden">
+              <div id="quizProgressBar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300" style="width: 10%"></div>
+            </div>
+          </div>
+
+          <!-- Cartão da Pergunta Atual -->
+          <div id="quizQuestionCard" class="bg-console-card border border-cyan-500/30 rounded-xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <span id="quizTypeBadge" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/35">
+                IDENTIFICAÇÃO NO MONITOR
+              </span>
+              <button id="btnQuizRefocus" type="button" class="text-[11px] text-cyan-300 hover:underline">
+                Reposicionar Sonda
+              </button>
+            </div>
+
+            <h3 id="quizPrompt" class="text-sm font-semibold text-white leading-snug">
+              Carregando desafio clínico...
+            </h3>
+
+            <p id="quizSubHint" class="text-xs text-slate-400">
+              Observe o monitor ao vivo e responda.
+            </p>
+
+            <!-- Container para opções de múltipla escolha (quando aplicável) -->
+            <div id="quizOptionsContainer" class="space-y-2 hidden"></div>
+
+            <!-- Feedback imediato após resposta -->
+            <div id="quizFeedbackBox" class="hidden rounded-xl p-3 text-xs leading-relaxed border"></div>
+
+            <!-- Ações do Quiz -->
+            <div class="flex items-center justify-between pt-1">
+              <button id="btnQuizRestart" type="button" class="text-xs text-slate-400 hover:text-slate-200 px-2 py-1.5">
+                Reiniciar Quiz
+              </button>
+              <button id="btnQuizNext" type="button"
+                class="hidden inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors">
+                <span>Próximo Caso</span>
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </main>
+
+  <!-- ==================== SCRIPT PRINCIPAL DO SIMULADOR ==================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // =========================================================================
+      // 1. BANCO DE DADOS ANATÔMICO (ATLAS DIDÁTICO EM PT-BR)
+      // =========================================================================
+      const ANATOMY_DB = {
+        bladder: {
+          id: 'bladder',
+          name: 'Bexiga Urinária',
+          shortName: 'Bexiga',
+          color: '#38bdf8', // sky-400
+          echogenicity: 'Anecoica (lúmen) / Parede hiperecoica fina',
+          echoBadgeColor: 'bg-slate-800 text-sky-300 border-sky-500/40',
+          landmarks: 'Localizada anteriormente ao útero e posterior à sínfise púbica. Na via suprapúbica, funciona como referência anterior obrigatória.',
+          artifacts: 'Reforço acústico posterior (faixa mais brilhante atrás da bexiga cheia devido à baixa atenuação sonora da urina).',
+          relevance: 'Na USG pélvica transabdominal, a repleção vesical moderada cria uma janela acústica que desloca alças intestinais com gás e permite visualizar útero e ovários com nitidez. Na USTV, deve estar vazia.',
+          bestView: { route: 'TA', plane: 'sagittal', sweep: 0, tilt: -5, bladder: 'full', uterinePos: 'AVF' }
+        },
+        myometrium: {
+          id: 'myometrium',
+          name: 'Útero (Miométrio)',
+          shortName: 'Miométrio',
+          color: '#a78bfa', // violet-400
+          echogenicity: 'Hipoecoico a isoecoico homogêneo',
+          echoBadgeColor: 'bg-violet-500/15 text-violet-300 border-violet-500/40',
+          landmarks: 'Órgão piriforme mediano, situado posteriormente à bexiga e anteriormente ao reto. Zona juncional interna aparece como fino halo hipoecoico ao redor do endométrio.',
+          artifacts: 'Atenuação moderada homogênea; sombra acústica em "persiana" pode ocorrer em miomas ou adenomiose (não presentes neste modelo fisiológico).',
+          relevance: 'Permite avaliar dimensões uterinas (normal ~7–9 cm de comprimento na menacme), posição (AVF vs. RVF), contornos e ecotextura para rastreio de leiomiomas e adenomiose.',
+          bestView: { route: 'TA', plane: 'sagittal', sweep: 0, tilt: 0, bladder: 'full', uterinePos: 'AVF' }
+        },
+        endometrium: {
+          id: 'endometrium',
+          name: 'Endométrio (Eco Endometrial)',
+          shortName: 'Endométrio',
+          color: '#f472b6', // pink-400
+          echogenicity: 'Variável conforme ciclo (Linear / Trilaminar / Hiperecoico)',
+          echoBadgeColor: 'bg-pink-500/15 text-pink-300 border-pink-500/40',
+          landmarks: 'Faixa central no interior do corpo uterino, medindo-se no plano sagital mediano em sua maior espessura anteroposterior (incluindo ambas as camadas basais).',
+          artifacts: 'Interface acústica nítida entre os folhetos anterior e posterior gera a linha central hiperecogênica no padrão trilaminar.',
+          relevance: 'Espelho da ação hormonal ovariana: fino (~4 mm) na fase proliferativa inicial (estrogênio inicial), trilaminar (~8–12 mm) na periovulatória (pico estrogênico) e espesso hiperecoico homogêneo (~12–16 mm) na fase secretora (progesterona).',
+          bestView: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: 5, bladder: 'empty', uterinePos: 'AVF' }
+        },
+        cervix: {
+          id: 'cervix',
+          name: 'Colo Uterino (Cérvice)',
+          shortName: 'Colo Uterino',
+          color: '#fb923c', // orange-400
+          echogenicity: 'Isoecoico / levemente mais fibroso que o miométrio',
+          echoBadgeColor: 'bg-orange-500/15 text-orange-300 border-orange-500/40',
+          landmarks: 'Porção cilíndrica inferior (caudal) do útero, contínua com o istmo uterino e projetada no fórnice vaginal; apresenta linha fina central correspondente ao canal endocervical.',
+          artifacts: 'Muco cervical na fase periovulatória pode produzir fina lâmina anecoica no canal endocervical.',
+          relevance: 'Referência fundamental para distinguir o corpo uterino, avaliar ângulo de flexão (AVF/RVF), comprimento cervical na gestação e cistos de Naboth.',
+          bestView: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: -14, bladder: 'empty', uterinePos: 'AVF' }
+        },
+        douglas: {
+          id: 'douglas',
+          name: 'Fundo de Saco de Douglas',
+          shortName: 'F. S. Douglas',
+          color: '#2dd4bf', // teal-400
+          echogenicity: 'Anecoico (quando contém líquido livre)',
+          echoBadgeColor: 'bg-teal-500/15 text-teal-300 border-teal-500/40',
+          landmarks: 'Escavação retouterina — ponto mais declive da cavidade peritoneal feminina, situado posteriormente ao colo uterino/fórnice vaginal posterior e anteriormente ao reto.',
+          artifacts: 'Pequenas lâminas de líquido livre fisiológico (< 10 mL) apresentam reforço sutil e moldam-se aos contornos pélvicos.',
+          relevance: 'Pequena quantidade de líquido anecoico é fisiológica após a ovulação (rotura folicular). Coleções volumosas ou com ecos internos sugerem hemoperitônio (ex: gravidez ectópica rota) ou DIP.',
+          bestView: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: -18, bladder: 'empty', cyclePhase: 'periovulatory', uterinePos: 'AVF' }
+        },
+        ovary: {
+          id: 'ovary',
+          name: 'Ovário e Folículos / Corpo Lúteo',
+          shortName: 'Ovário',
+          color: '#facc15', // yellow-400
+          echogenicity: 'Parênquima hipoecoico + Folículos anecoicos',
+          echoBadgeColor: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/40',
+          landmarks: 'Situados lateralmente ao útero (fossas ováricas), em estreita relação anterior/medial com os vasos ilíacos internos (principal reparo vascular para encontrá-los).',
+          artifacts: 'Folículo dominante (>18 mm) gera reforço acústico posterior típico de estruturas císticas simples.',
+          relevance: 'Avalia reserva folicular (folículos antrais periféricos), monitorização da ovulação (folículo dominante de Graaf ~18–22 mm) e corpo lúteo na fase secretora (parede espessa crenado com "anel de fogo" ao Doppler colorido).',
+          bestView: { route: 'TV', plane: 'sagittal', sweep: 72, tilt: 4, bladder: 'empty' }
+        },
+        vessels: {
+          id: 'vessels',
+          name: 'Vasos Ilíacos e Artérias Uterinas',
+          shortName: 'Vasos Pélvicos',
+          color: '#f43f5e', // rose-500
+          echogenicity: 'Anecoicos tubulares com sinal ao Doppler Colorido',
+          echoBadgeColor: 'bg-rose-500/15 text-rose-300 border-rose-500/40',
+          landmarks: 'Vasos ilíacos internos cruzam posteriormente aos ovários (ponto-chave na busca anexial). Artérias uterinas e plexos arqueados contornam as margens laterais do miométrio.',
+          artifacts: 'Ativando o Doppler Colorido (CFM), exibem fluxo pulsátil codificado em vermelho (aproximando-se da sonda) e azul (afastando-se — regra BART).',
+          relevance: 'Essenciais para diferenciar vasos de folículos ou hidrossalpinge, localizar ovários e estudar perfusão uterina/lútea (anel vascular de baixa resistência no corpo lúteo).',
+          bestView: { route: 'TV', plane: 'transverse', sweep: 48, tilt: 5, doppler: true, bladder: 'empty' }
+        },
+        rectum: {
+          id: 'rectum',
+          name: 'Reto e Alças Intestinais',
+          shortName: 'Reto / Alças',
+          color: '#94a3b8', // slate-400
+          echogenicity: 'Heterogêneo com focos hiperecoicos',
+          echoBadgeColor: 'bg-slate-700/60 text-slate-300 border-slate-500/40',
+          landmarks: 'Posterior ao útero e ao fundo de saco de Douglas; alças de delgado/sigmoide envolvem superior e lateralmente a pelve.',
+          artifacts: 'Sombra acústica suja e artefatos de reverberação causados pelo gás intraluminal, que impedem a passagem do feixe ultrassonográfico.',
+          relevance: 'O gás intestinal é o principal inimigo da USG transabdominal quando a bexiga está vazia. Reconhecer peristalse e sombra suja evita confundir alças com massas anexiais.',
+          bestView: { route: 'TA', plane: 'sagittal', sweep: 0, tilt: -12, bladder: 'full', uterinePos: 'AVF' }
+        }
+      };
+
+      const ANATOMY_ORDER = [
+        'bladder', 'myometrium', 'endometrium', 'cervix',
+        'douglas', 'ovary', 'vessels', 'rectum'
+      ];
+
+      // =========================================================================
+      // 2. BANCO DE DESAFIOS PRÁTICOS (MODO DESAFIO)
+      // =========================================================================
+      const QUIZ_CASES = [
+        {
+          id: 1,
+          type: 'click',
+          badge: 'IDENTIFICAÇÃO NO MONITOR',
+          prompt: 'Clique diretamente na imagem do ultrassom para identificar o ENDOMÉTRIO.',
+          hint: 'Observe o corte sagital em alta resolução pela via transvaginal e clique sobre o eco endometrial central.',
+          setup: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: 4, cyclePhase: 'periovulatory', uterinePos: 'AVF', bladder: 'empty', doppler: false },
+          targetStructure: 'endometrium',
+          explanation: 'Correto! O endométrio ocupa o centro do corpo uterino e, nesta fase periovulatória, exibe o clássico padrão trilaminar (~10 mm) com três linhas hiperecogênicas bem definidas.'
+        },
+        {
+          id: 2,
+          type: 'mcq',
+          badge: 'FISIOLOGIA DO CICLO',
+          prompt: 'Analise o aspecto do endométrio no corte ao vivo. Qual fase do ciclo menstrual está representada?',
+          hint: 'Repare na presença de três linhas hiperecogênicas paralelas (padrão trilaminar) e espessura em torno de 10 mm.',
+          setup: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: 5, cyclePhase: 'periovulatory', uterinePos: 'AVF', bladder: 'empty', doppler: false },
+          highlightAfter: 'endometrium',
+          options: [
+            { label: 'Fase Proliferativa Inicial (pós-menstrual)', value: 'proliferative' },
+            { label: 'Fase Periovulatória (pico estrogênico)', value: 'periovulatory' },
+            { label: 'Fase Secretora Tardia / Lútea', value: 'secretory' },
+            { label: 'Atrofia Endometrial Pós-menopausa', value: 'atrophy' }
+          ],
+          correctValue: 'periovulatory',
+          explanation: 'Na fase periovulatória (estrogênio elevado pré-ovulação), o endométrio assume o aspecto trilaminar clássico (três linhas brilhantes separadas por halos hipoecoicos) medindo cerca de 8 a 12 mm.'
+        },
+        {
+          id: 3,
+          type: 'click',
+          badge: 'IDENTIFICAÇÃO NO MONITOR',
+          prompt: 'Via Suprapúbica (TA): clique sobre a BEXIGA URINÁRIA repleta que serve como janela acústica.',
+          hint: 'Procure a estrutura intensamente anecoica (preta) localizada anteriormente ao útero.',
+          setup: { route: 'TA', plane: 'sagittal', sweep: 0, tilt: -4, cyclePhase: 'proliferative', uterinePos: 'AVF', bladder: 'full', doppler: false },
+          targetStructure: 'bladder',
+          explanation: 'A bexiga cheia é uma estrutura anecoica anterior ao útero. Ela desloca alças intestinais e fornece uma janela acústica ideal para o exame suprapúbico.'
+        },
+        {
+          id: 4,
+          type: 'mcq',
+          badge: 'FÍSICA & ARTEFATOS',
+          prompt: 'Observe a faixa mais brilhante (hiperecogênica) logo atrás da bexiga repleta na imagem. Qual artefato acústico é esse?',
+          hint: 'Líquidos homogêneos como a urina atenuam muito menos o som do que os tecidos sólidos adjacentes.',
+          setup: { route: 'TA', plane: 'sagittal', sweep: 0, tilt: -5, cyclePhase: 'proliferative', uterinePos: 'AVF', bladder: 'full', doppler: false },
+          highlightAfter: 'bladder',
+          options: [
+            { label: 'Sombra acústica posterior', value: 'shadow' },
+            { label: 'Reforço acústico posterior', value: 'enhancement' },
+            { label: 'Artefato em espelho', value: 'mirror' },
+            { label: 'Aliasing de velocidade', value: 'aliasing' }
+          ],
+          correctValue: 'enhancement',
+          explanation: 'O reforço acústico posterior ocorre atrás de estruturas repletas de líquido (bexiga, folículos, cistos simples) porque o feixe sofre pouca atenuação ao atravessá-las, chegando mais intenso aos tecidos profundos.'
+        },
+        {
+          id: 5,
+          type: 'click',
+          badge: 'VARREDURA ANEXIAL',
+          prompt: 'O transdutor foi varrido para a fossa ovárica direita. Clique sobre o OVÁRIO (com folículo dominante).',
+          hint: 'Identifique a estrutura ovalada hipoecoica contendo cistos anecoicos arredondados e um grande folículo dominante.',
+          setup: { route: 'TV', plane: 'sagittal', sweep: 74, tilt: 4, cyclePhase: 'periovulatory', uterinePos: 'AVF', bladder: 'empty', doppler: false },
+          targetStructure: 'ovary',
+          explanation: 'Perfeito! Ao varrer lateralmente na USTV sagital, o útero sai do plano e o ovário entra em cena junto aos vasos ilíacos, exibindo folículos antrais e um folículo dominante (~19 mm) na fase periovulatória.'
+        },
+        {
+          id: 6,
+          type: 'click',
+          badge: 'IDENTIFICAÇÃO NO MONITOR',
+          prompt: 'Clique no FUNDO DE SACO DE DOUGLAS (escavação retouterina) contendo pequena lâmina de líquido livre fisiológico.',
+          hint: 'Procure a pequena coleção triangular anecoica localizada posteriormente ao colo/corpo uterino.',
+          setup: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: -16, cyclePhase: 'periovulatory', uterinePos: 'AVF', bladder: 'empty', doppler: false },
+          targetStructure: 'douglas',
+          explanation: 'Exato! O Fundo de Saco de Douglas é o recesso peritoneal posterior ao útero e anterior ao reto. Pequena lâmina anecoica de líquido livre é comum após a ovulação.'
+        },
+        {
+          id: 7,
+          type: 'mcq',
+          badge: 'DOPPLER & MORFOFISIOLOGIA',
+          prompt: 'Observe o ovário com Doppler Colorido ativo exibindo o sinal do "Anel de Fogo" ao redor de uma estrutura de parede espessa. O que estamos vendo?',
+          hint: 'O padrão vascular periférico exuberante de baixa resistência é típico da segunda metade do ciclo menstrual.',
+          setup: { route: 'TV', plane: 'sagittal', sweep: 74, tilt: 4, cyclePhase: 'secretory', uterinePos: 'AVF', bladder: 'empty', doppler: true },
+          highlightAfter: 'ovary',
+          options: [
+            { label: 'Folículo antral imaturo (fase folicular)', value: 'antral' },
+            { label: 'Corpo Lúteo funcionante (fase secretora)', value: 'corpus_luteum' },
+            { label: 'Bexiga urinária em repleção', value: 'bladder' },
+            { label: 'Artéria ilíaca comum dilatada', value: 'iliac' }
+          ],
+          correctValue: 'corpus_luteum',
+          explanation: 'O sinal do "anel de fogo" (ring of fire) ao Doppler colorido representa a intensa neovascularização periférica do corpo lúteo na fase lútea/secretora, produtor de progesterona.'
+        },
+        {
+          id: 8,
+          type: 'mcq',
+          badge: 'ANATOMIA POSICIONAL',
+          prompt: 'Avalie a curvatura do fundo uterino em relação à bexiga (anterior) e ao reto (posterior). Qual é a posição uterina atual?',
+          hint: 'Note que o corpo e o fundo do útero dobram-se posteriormente, em direção ao reto/fundo de saco de Douglas.',
+          setup: { route: 'TA', plane: 'sagittal', sweep: 0, tilt: 0, cyclePhase: 'secretory', uterinePos: 'RVF', bladder: 'full', doppler: false },
+          highlightAfter: 'myometrium',
+          options: [
+            { label: 'Anteversoflexão (AVF)', value: 'AVF' },
+            { label: 'Retroversoflexão (RVF)', value: 'RVF' },
+            { label: 'Útero didelfo bicorno', value: 'didelfo' },
+            { label: 'Prolapso uterino grau IV', value: 'prolapso' }
+          ],
+          correctValue: 'RVF',
+          explanation: 'Na Retroversoflexão (RVF), o eixo do corpo e do fundo uterino dirige-se posteriormente em direção ao reto, afastando-se da bexiga. É uma variação anatômica comum (~20% das mulheres).'
+        },
+        {
+          id: 9,
+          type: 'click',
+          badge: 'IDENTIFICAÇÃO NO MONITOR',
+          prompt: 'Clique sobre o COLO UTERINO (cérvice) neste corte sagital.',
+          hint: 'Localize a porção caudal/inferior do útero contínua com o corpo uterino e com o canal endocervical fino.',
+          setup: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: -14, cyclePhase: 'proliferative', uterinePos: 'AVF', bladder: 'empty', doppler: false },
+          targetStructure: 'cervix',
+          explanation: 'Muito bem! O colo uterino é a porção cilíndrica inferior do útero, com ecotextura discretamente mais fibrosa e canal endocervical linear.'
+        },
+        {
+          id: 10,
+          type: 'mcq',
+          badge: 'CORRELAÇÃO ENDOMETRIAL',
+          prompt: 'Observe o endométrio espessado (~13.5 mm) e uniformemente hiperecogênico (brilhante/homogêneo). A qual fase do ciclo corresponde?',
+          hint: 'A ação da progesterona promove edema estromal e tortuosidade glandular, aumentando fortemente a ecogenicidade endometrial.',
+          setup: { route: 'TV', plane: 'sagittal', sweep: 0, tilt: 5, cyclePhase: 'secretory', uterinePos: 'AVF', bladder: 'empty', doppler: false },
+          highlightAfter: 'endometrium',
+          options: [
+            { label: 'Fase Menstrual imediata', value: 'menstrual' },
+            { label: 'Fase Proliferativa Inicial', value: 'proliferative' },
+            { label: 'Fase Periovulatória (Trilaminar)', value: 'periovulatory' },
+            { label: 'Fase Secretora / Lútea', value: 'secretory' }
+          ],
+          correctValue: 'secretory',
+          explanation: 'Na fase secretora (lútea), sob efeito da progesterona do corpo lúteo, o endométrio perde o aspecto trilaminar e torna-se espesso (~12–16 mm) e difusamente hiperecogênico.'
+        }
+      ];
+
+      // =========================================================================
+      // 3. ESTADO GLOBAL DO SIMULADOR
+      // =========================================================================
+      const DEFAULT_STATE = {
+        route: 'TA',              // 'TA' (Transabdominal) | 'TV' (Transvaginal)
+        plane: 'sagittal',        // 'sagittal' | 'transverse'
+        sweep: 0,                 // -100 a +100
+        tilt: 0,                  // -40 a +40 graus
+        cyclePhase: 'periovulatory', // 'proliferative' | 'periovulatory' | 'secretory'
+        uterinePos: 'AVF',        // 'AVF' | 'RVF'
+        bladder: 'full',          // 'full' | 'empty'
+
+        // Knobology
+        gain: 62,                 // 15 a 100
+        depth: 14.0,              // cm (TA: 8..18, TV: 5..12)
+        freq: 4.0,                // MHz (TA: 3..5, TV: 5..9)
+        frozen: false,
+        doppler: false,
+        caliperMode: false,
+        overlay: false,
+
+        // Navegação / Modos
+        activeTab: 'controls',    // 'controls' | 'atlas' | 'quiz'
+        selectedStructure: 'endometrium',
+        hoverStructure: null,
+
+        // Medições do Paquímetro: array de { p1: {xCm, yCm}, p2: {xCm, yCm} }
+        measurements: [],
+        pendingPoint: null,       // {xCm, yCm} quando o usuário clicou o 1º ponto
+
+        // Quiz
+        quizIndex: 0,
+        quizScore: 0,
+        quizStreak: 0,
+        quizAnswered: false,
+        quizHighlightStructure: null,
+
+        // Animação suave de transição da sonda (para "Ir para melhor plano" e Quiz)
+        animTarget: null
+      };
+
+      const state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+      // Estruturas renderizadas no frame atual para Hit-Testing exato e Sobreposição
+      // Cada item: { id, label, color, hitTest(px, py), drawOverlay(ctx), labelPos: {x, y} }
+      let renderedShapes = [];
+
+      // Geometria atual do feixe no canvas (atualizada a cada frame)
+      let beamGeom = {
+        cx: 0,
+        apexY: 0,
+        rStart: 0,
+        rEnd: 0,
+        halfAngle: 0.55,
+        pxPerCm: 25,
+        width: 800,
+        height: 500
+      };
+
+      // =========================================================================
+      // 4. ELEMENTOS DO DOM
+      // =========================================================================
+      const dom = {
+        usgCanvas: document.getElementById('usgCanvas'),
+        diagramCanvas: document.getElementById('diagramCanvas'),
+        monitorWrapper: document.getElementById('monitorWrapper'),
+        toastBanner: document.getElementById('toastBanner'),
+        monitorHintText: document.getElementById('monitorHintText'),
+
+        // Header
+        modeBadge: document.getElementById('modeBadge'),
+        modeBadgeDot: document.getElementById('modeBadgeDot'),
+        modeBadgeText: document.getElementById('modeBadgeText'),
+        btnResetAll: document.getElementById('btnResetAll'),
+
+        // HUD
+        hudRoute: document.getElementById('hudRoute'),
+        hudPlane: document.getElementById('hudPlane'),
+        hudFreq: document.getElementById('hudFreq'),
+        hudDepth: document.getElementById('hudDepth'),
+        hudGain: document.getElementById('hudGain'),
+        hudDopplerTag: document.getElementById('hudDopplerTag'),
+        hudCaliperTag: document.getElementById('hudCaliperTag'),
+        hudStatusPill: document.getElementById('hudStatusPill'),
+        hudStatusDot: document.getElementById('hudStatusDot'),
+        hudStatusText: document.getElementById('hudStatusText'),
+        hudFps: document.getElementById('hudFps'),
+        miniDiagramPlaneLabel: document.getElementById('miniDiagramPlaneLabel'),
+
+        // Knobology
+        sliderGain: document.getElementById('sliderGain'),
+        valGain: document.getElementById('valGain'),
+        sliderDepth: document.getElementById('sliderDepth'),
+        valDepth: document.getElementById('valDepth'),
+        sliderFreq: document.getElementById('sliderFreq'),
+        valFreq: document.getElementById('valFreq'),
+        btnFreeze: document.getElementById('btnFreeze'),
+        btnDoppler: document.getElementById('btnDoppler'),
+        btnCaliper: document.getElementById('btnCaliper'),
+        btnClearMeasure: document.getElementById('btnClearMeasure'),
+        btnOverlay: document.getElementById('btnOverlay'),
+
+        // Tabs
+        tabBtnControls: document.getElementById('tabBtnControls'),
+        tabBtnAtlas: document.getElementById('tabBtnAtlas'),
+        tabBtnQuiz: document.getElementById('tabBtnQuiz'),
+        panelControls: document.getElementById('panelControls'),
+        panelAtlas: document.getElementById('panelAtlas'),
+        panelQuiz: document.getElementById('panelQuiz'),
+
+        // Controls Tab
+        btnRouteTA: document.getElementById('btnRouteTA'),
+        btnRouteTV: document.getElementById('btnRouteTV'),
+        btnPlaneSag: document.getElementById('btnPlaneSag'),
+        btnPlaneTrans: document.getElementById('btnPlaneTrans'),
+        sliderSweep: document.getElementById('sliderSweep'),
+        valSweep: document.getElementById('valSweep'),
+        labelSweepTitle: document.getElementById('labelSweepTitle'),
+        sweepAxisTicks: document.getElementById('sweepAxisTicks'),
+        sliderTilt: document.getElementById('sliderTilt'),
+        valTilt: document.getElementById('valTilt'),
+        btnCenterProbe: document.getElementById('btnCenterProbe'),
+        btnPhaseProlif: document.getElementById('btnPhaseProlif'),
+        btnPhasePeriov: document.getElementById('btnPhasePeriov'),
+        btnPhaseSecret: document.getElementById('btnPhaseSecret'),
+        btnPosAVF: document.getElementById('btnPosAVF'),
+        btnPosRVF: document.getElementById('btnPosRVF'),
+        btnBladderFull: document.getElementById('btnBladderFull'),
+        btnBladderEmpty: document.getElementById('btnBladderEmpty'),
+        clinicalContextText: document.getElementById('clinicalContextText'),
+
+        // Atlas Tab
+        atlasList: document.getElementById('atlasList'),
+        atlasDetailCard: document.getElementById('atlasDetailCard'),
+
+        // Quiz Tab
+        quizScore: document.getElementById('quizScore'),
+        quizStreak: document.getElementById('quizStreak'),
+        quizProgressText: document.getElementById('quizProgressText'),
+        quizProgressBar: document.getElementById('quizProgressBar'),
+        quizTypeBadge: document.getElementById('quizTypeBadge'),
+        quizPrompt: document.getElementById('quizPrompt'),
+        quizSubHint: document.getElementById('quizSubHint'),
+        quizOptionsContainer: document.getElementById('quizOptionsContainer'),
+        quizFeedbackBox: document.getElementById('quizFeedbackBox'),
+        btnQuizNext: document.getElementById('btnQuizNext'),
+        btnQuizRestart: document.getElementById('btnQuizRestart'),
+        btnQuizRefocus: document.getElementById('btnQuizRefocus')
+      };
+
+      const ctx = dom.usgCanvas.getContext('2d');
+      const diagCtx = dom.diagramCanvas.getContext('2d');
+
+      // Buffer offscreen para guardar o frame congelado (FREEZE perfeito)
+      const freezeBuffer = document.createElement('canvas');
+      const freezeCtx = freezeBuffer.getContext('2d');
+      let hasFrozenFrame = false;
+
+      // =========================================================================
+      // 5. GERADOR DE TEXTURA SPECKLE ULTRASSONOGRÁFICO (PERFORMANCE 60 FPS)
+      // =========================================================================
+      // Geramos 2 tiles offscreen de speckle anisotrópico (baixa freq = mais grosso, alta freq = mais fino)
+      const speckleLow = document.createElement('canvas');
+      const speckleHigh = document.createElement('canvas');
+
+      function buildSpeckleTile(canvas, size, grainX, grainY) {
+        canvas.width = size;
+        canvas.height = size;
+        const sCtx = canvas.getContext('2d');
+        const img = sCtx.createImageData(size, size);
+        const data = img.data;
+
+        // Gera ruído Rayleigh/Gaussiano aproximado para aspecto genuíno de ultrassom Modo B
+        for (let y = 0; y < size; y += grainY) {
+          for (let x = 0; x < size; x += grainX) {
+            // Combinação de 2 amostras uniformes gera distribuição triangular suave + picos brilhantes
+            const r1 = Math.random();
+            const r2 = Math.random();
+            let v = (r1 + r2) * 0.5;
+            // Reforça micro-refletores (speckle brilhante característico)
+            if (Math.random() > 0.88) v = Math.min(1, v + 0.38);
+            if (Math.random() < 0.14) v = Math.max(0, v - 0.35);
+            const val = Math.floor(v * 255);
+
+            for (let dy = 0; dy < grainY && (y + dy) < size; dy++) {
+              for (let dx = 0; dx < grainX && (x + dx) < size; dx++) {
+                const idx = ((y + dy) * size + (x + dx)) * 4;
+                data[idx] = val;
+                data[idx + 1] = val;
+                data[idx + 2] = val;
+                data[idx + 3] = 255;
+              }
+            }
+          }
+        }
+        sCtx.putImageData(img, 0, 0);
+      }
+
+      // Tile para sonda convexa (3-5 MHz, grão levemente alongado lateralmente)
+      buildSpeckleTile(speckleLow, 256, 3, 2);
+      // Tile para sonda transvaginal (5-9 MHz, alta resolução de campo próximo)
+      buildSpeckleTile(speckleHigh, 256, 2, 1);
+
+      // =========================================================================
+      // 6. UTILITÁRIOS DE CONVERSÃO ANATÔMICA (cm <-> px) E GEOMETRIA
+      // =========================================================================
+      function clamp(val, min, max) {
+        return Math.max(min, Math.min(max, val));
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      // Converte coordenadas anatômicas (xCm: 0 é o eixo central, yCm: profundidade a partir da face da sonda)
+      // para pixels no canvas principal
+      function cmToPx(xCm, yCm) {
+        const yPx = beamGeom.apexY + beamGeom.rStart + yCm * beamGeom.pxPerCm;
+        const xPx = beamGeom.cx + xCm * beamGeom.pxPerCm;
+        return { x: xPx, y: yPx };
+      }
+
+      function pxToCm(px, py) {
+        const xCm = (px - beamGeom.cx) / beamGeom.pxPerCm;
+        const yCm = (py - (beamGeom.apexY + beamGeom.rStart)) / beamGeom.pxPerCm;
+        return { xCm, yCm };
+      }
+
+      // Verifica se um ponto (px, py) está dentro de uma elipse rotacionada
+      function hitEllipse(px, py, cx, cy, rx, ry, rot) {
+        const dx = px - cx;
+        const dy = py - cy;
+        const cos = Math.cos(-rot);
+        const sin = Math.sin(-rot);
+        const lx = dx * cos - dy * sin;
+        const ly = dx * sin + dy * cos;
+        return (lx * lx) / (rx * rx) + (ly * ly) / (ry * ry) <= 1.0;
+      }
+
+      // Verifica se um ponto está dentro de um polígono simples (Ray casting)
+      function hitPolygon(px, py, pts) {
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const xi = pts[i].x, yi = pts[i].y;
+          const xj = pts[j].x, yj = pts[j].y;
+          const intersect = ((yi > py) !== (yj > py)) &&
+            (px < (xj - xi) * (py - yi) / ((yj - yi) || 0.0001) + xi);
+          if (intersect) inside = !inside;
+        }
+        return inside;
+      }
+
+      // Toast temporário sutil no monitor
+      let toastTimer = null;
+      function showToast(msg, duration = 2400) {
+        dom.toastBanner.textContent = msg;
+        dom.toastBanner.classList.remove('hidden');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          dom.toastBanner.classList.add('hidden');
+        }, duration);
+      }
+
+      // =========================================================================
+      // 7. MOTOR DE RENDERIZAÇÃO ULTRASSONOGRÁFICA (MODO B + DOPPLER + CALIPER)
+      // =========================================================================
+      let lastTime = performance.now();
+      let frameCount = 0;
+      let fpsDisplay = 60;
+      let simTime = 0;
+
+      // Calcula a geometria do leque setorial conforme tamanho do canvas e via (TA vs TV)
+      function updateBeamGeometry(w, h) {
+        const topMargin = 38;
+        const bottomMargin = 26;
+        const usableH = Math.max(200, h - topMargin - bottomMargin);
+        const pxPerCm = usableH / state.depth;
+
+        const isTV = state.route === 'TV';
+        // Transabdominal (sonda convexa): raio de curvatura amplo (~5 cm), ângulo ~66°
+        // Transvaginal (sonda microconvexa): raio de curvatura curto (~1.3 cm), ângulo amplo ~114°
+        const rStart = isTV ? Math.max(16, 1.15 * pxPerCm) : Math.max(46, 4.2 * pxPerCm);
+        const halfAngle = isTV ? (56 * Math.PI / 180) : (34 * Math.PI / 180);
+        const apexY = topMargin - rStart + (isTV ? 6 : 10);
+        const rEnd = rStart + state.depth * pxPerCm;
+
+        beamGeom = {
+          cx: w * 0.48, // leve deslocamento para dar folga à régua direita
+          apexY,
+          rStart,
+          rEnd,
+          halfAngle,
+          pxPerCm,
+          width: w,
+          height: h
+        };
+      }
+
+      // Cria o path de recorte (clip) do feixe setorial
+      function defineSectorPath(targetCtx) {
+        const { cx, apexY, rStart, rEnd, halfAngle } = beamGeom;
+        const startAng = Math.PI / 2 - halfAngle;
+        const endAng = Math.PI / 2 + halfAngle;
+
+        targetCtx.beginPath();
+        targetCtx.arc(cx, apexY, rStart, startAng, endAng, false);
+        targetCtx.arc(cx, apexY, rEnd, endAng, startAng, true);
+        targetCtx.closePath();
+      }
+
+      // Desenha um polígono suave (spline fechada) para formas orgânicas realistas
+      function traceSmoothClosedPoly(targetCtx, pts) {
+        if (!pts || pts.length < 3) return;
+        targetCtx.beginPath();
+        const len = pts.length;
+        const mid0x = (pts[len - 1].x + pts[0].x) / 2;
+        const mid0y = (pts[len - 1].y + pts[0].y) / 2;
+        targetCtx.moveTo(mid0x, mid0y);
+        for (let i = 0; i < len; i++) {
+          const curr = pts[i];
+          const next = pts[(i + 1) % len];
+          const midX = (curr.x + next.x) / 2;
+          const midY = (curr.y + next.y) / 2;
+          targetCtx.quadraticCurveTo(curr.x, curr.y, midX, midY);
+        }
+        targetCtx.closePath();
+      }
+
+      // Desenha faixa de reforço acústico posterior acompanhando os raios do transdutor
+      function drawPosteriorEnhancement(targetCtx, centerPx, widthPx, intensity) {
+        const { cx, apexY, rEnd } = beamGeom;
+        const dx = centerPx.x - cx;
+        const dy = centerPx.y - apexY;
+        const dist = Math.hypot(dx, dy) || 1;
+        const angCenter = Math.atan2(dy, dx);
+        const angSpread = Math.min(0.28, (widthPx * 0.48) / dist);
+
+        const grad = targetCtx.createRadialGradient(
+          cx, apexY, dist * 0.95,
+          cx, apexY, rEnd
+        );
+        grad.addColorStop(0, `rgba(255,255,255,${intensity})`);
+        grad.addColorStop(0.55, `rgba(235,245,255,${intensity * 0.55})`);
+        grad.addColorStop(1, 'rgba(200,220,240,0)');
+
+        targetCtx.save();
+        targetCtx.fillStyle = grad;
+        targetCtx.beginPath();
+        targetCtx.moveTo(
+          cx + Math.cos(angCenter - angSpread) * dist,
+          apexY + Math.sin(angCenter - angSpread) * dist
+        );
+        targetCtx.arc(cx, apexY, rEnd, angCenter - angSpread, angCenter + angSpread, false);
+        targetCtx.arc(cx, apexY, dist, angCenter + angSpread, angCenter - angSpread, true);
+        targetCtx.closePath();
+        targetCtx.fill();
+        targetCtx.restore();
+      }
+
+      // Desenha sombra acústica suja (gás intestinal / reverberação)
+      function drawDirtyShadow(targetCtx, centerPx, widthPx, strength) {
+        const { cx, apexY, rEnd } = beamGeom;
+        const dx = centerPx.x - cx;
+        const dy = centerPx.y - apexY;
+        const dist = Math.hypot(dx, dy) || 1;
+        const angCenter = Math.atan2(dy, dx);
+        const angSpread = Math.min(0.26, (widthPx * 0.48) / dist);
+
+        const grad = targetCtx.createRadialGradient(
+          cx, apexY, dist,
+          cx, apexY, rEnd
+        );
+        grad.addColorStop(0, `rgba(18,22,28,${strength})`);
+        grad.addColorStop(0.4, `rgba(5,7,10,${strength * 0.9})`);
+        grad.addColorStop(1, `rgba(2,3,5,${strength})`);
+
+        targetCtx.save();
+        targetCtx.fillStyle = grad;
+        targetCtx.beginPath();
+        targetCtx.arc(cx, apexY, rEnd, angCenter - angSpread, angCenter + angSpread, false);
+        targetCtx.arc(cx, apexY, dist, angCenter + angSpread, angCenter - angSpread, true);
+        targetCtx.closePath();
+        targetCtx.fill();
+        targetCtx.restore();
+      }
+
+      // =========================================================================
+      // 8. CONSTRUÇÃO ANATÔMICA DINÂMICA DO CORTE ATUAL (TA/TV x SAG/TRANS)
+      // =========================================================================
+      function renderUltrasoundScene(targetCtx, timeSec) {
+        const w = beamGeom.width;
+        const h = beamGeom.height;
+        const pxPerCm = beamGeom.pxPerCm;
+        const isTV = state.route === 'TV';
+        const isSag = state.plane === 'sagittal';
+        const sweepNorm = state.sweep / 100;       // -1 .. +1
+        const tiltRad = (state.tilt * Math.PI) / 180;
+        const tiltCm = (state.tilt / 40) * (isTV ? 1.8 : 2.6);
+
+        // Limpa lista de hit-testing do frame
+        renderedShapes = [];
+
+        // Fundo preto puro do monitor
+        targetCtx.fillStyle = '#020407';
+        targetCtx.fillRect(0, 0, w, h);
+
+        // Calcula fatores de ganho e frequência
+        // Frequência maior -> maior nitidez, porém atenuação mais forte no campo profundo
+        const gainFactor = state.gain / 62; // 1.0 no ganho padrão
+        const freqNorm = isTV ? (state.freq - 5) / 4 : (state.freq - 3) / 2; // 0 .. 1
+
+        // Começa o recorte dentro do leque setorial
+        targetCtx.save();
+        defineSectorPath(targetCtx);
+        targetCtx.clip();
+
+        // 1) Fundo tecidual pélvico base (parênquima/tecido conjuntivo pélvico com atenuação radial)
+        const baseBgGrad = targetCtx.createRadialGradient(
+          beamGeom.cx, beamGeom.apexY + beamGeom.rStart, 4,
+          beamGeom.cx, beamGeom.apexY + beamGeom.rStart, beamGeom.rEnd - beamGeom.rStart
+        );
+        const topLum = clamp(Math.round(78 * gainFactor), 20, 140);
+        const midLum = clamp(Math.round(52 * gainFactor), 14, 110);
+        const deepLum = clamp(Math.round((30 - freqNorm * 12) * gainFactor), 6, 75);
+        baseBgGrad.addColorStop(0, `rgb(${topLum},${topLum + 2},${topLum + 4})`);
+        baseBgGrad.addColorStop(0.45, `rgb(${midLum},${midLum + 1},${midLum + 3})`);
+        baseBgGrad.addColorStop(1, `rgb(${deepLum},${deepLum},${deepLum + 2})`);
+        targetCtx.fillStyle = baseBgGrad;
+        targetCtx.fillRect(0, 0, w, h);
+
+        // Camada superficial da parede abdominal (TA) ou parede vaginal (TV)
+        if (!isTV) {
+          // Estratos subcutâneos e musculares horizontais na parede abdominal anterior (0 a 1.6 cm)
+          for (let i = 0; i < 4; i++) {
+            const yBand = cmToPx(0, 0.35 + i * 0.38).y;
+            targetCtx.strokeStyle = i % 2 === 0 ? 'rgba(205,215,225,0.22)' : 'rgba(40,48,58,0.35)';
+            targetCtx.lineWidth = pxPerCm * 0.24;
+            targetCtx.beginPath();
+            targetCtx.arc(beamGeom.cx, beamGeom.apexY, beamGeom.rStart + (0.35 + i * 0.38) * pxPerCm, Math.PI * 0.2, Math.PI * 0.8);
+            targetCtx.stroke();
+          }
+        }
+
+        // Lista de sinais de Doppler a desenhar por cima caso Doppler esteja ativo
+        const dopplerSignals = [];
+
+        // Fator de visibilidade da janela acústica no TA quando bexiga está vazia
+        const poorTAWindow = !isTV && state.bladder === 'empty';
+
+        // -----------------------------------------------------------------------
+        // A) RETO E ALÇAS INTESTINAIS (POSTERIOR)
+        // -----------------------------------------------------------------------
+        {
+          const rectDepthCm = isTV ? (5.7 - tiltCm * 0.45) : (10.7 - tiltCm * 0.55);
+          const rectXCm = isSag ? (isTV ? 1.5 : 2.1) - sweepNorm * 1.4 : sweepNorm * 1.1;
+          const pRect = cmToPx(rectXCm, rectDepthCm);
+          const rx = (isTV ? 1.85 : 2.5) * pxPerCm;
+          const ry = (isTV ? 1.05 : 1.35) * pxPerCm;
+
+          // Sombra suja posterior ao reto
+          drawDirtyShadow(targetCtx, pRect, rx * 2.1, 0.72);
+
+          // Corpo heterogêneo do reto/alças
+          const rGrad = targetCtx.createRadialGradient(pRect.x, pRect.y - ry * 0.3, ry * 0.1, pRect.x, pRect.y, rx);
+          rGrad.addColorStop(0, 'rgba(175,180,188,0.85)');
+          rGrad.addColorStop(0.5, 'rgba(85,90,98,0.85)');
+          rGrad.addColorStop(1, 'rgba(28,32,38,0.7)');
+
+          targetCtx.save();
+          targetCtx.translate(pRect.x, pRect.y);
+          targetCtx.rotate(isSag ? -0.18 : 0.05);
+          targetCtx.fillStyle = rGrad;
+          targetCtx.beginPath();
+          targetCtx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+          targetCtx.fill();
+
+          // Focos hiperecogênicos brilhantes de gás intraluminal com leve peristalse
+          const peristalsis = Math.sin(timeSec * 1.4) * 3;
+          for (let g = -2; g <= 2; g++) {
+            targetCtx.fillStyle = 'rgba(240,245,255,0.65)';
+            targetCtx.beginPath();
+            targetCtx.ellipse(g * rx * 0.28 + peristalsis * 0.3, -ry * 0.25 + Math.sin(g * 2) * ry * 0.15, rx * 0.16, ry * 0.14, 0.2 * g, 0, Math.PI * 2);
+            targetCtx.fill();
+          }
+          targetCtx.restore();
+
+          renderedShapes.push({
+            id: 'rectum',
+            label: ANATOMY_DB.rectum.shortName,
+            color: ANATOMY_DB.rectum.color,
+            labelPos: { x: pRect.x, y: pRect.y },
+            hitTest: (px, py) => hitEllipse(px, py, pRect.x, pRect.y, rx, ry, isSag ? -0.18 : 0.05),
+            drawOverlay: (oCtx) => {
+              oCtx.save();
+              oCtx.translate(pRect.x, pRect.y);
+              oCtx.rotate(isSag ? -0.18 : 0.05);
+              oCtx.beginPath();
+              oCtx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+              oCtx.fill();
+              oCtx.stroke();
+              oCtx.restore();
+            }
+          });
+        }
+
+        // -----------------------------------------------------------------------
+        // B) BEXIGA URINÁRIA (ANTERIOR) + REFORÇO ACÚSTICO POSTERIOR
+        // -----------------------------------------------------------------------
+        {
+          // Na via TA: bexiga cheia é grande e central/anterior; vazia é pequena fenda
+          // Na via TV sagital: bexiga fica à esquerda superior (anterior); no transversal bem rasa anteriormente
+          const isFull = state.bladder === 'full';
+          const lateralFade = isSag ? Math.max(0.25, 1 - Math.abs(sweepNorm) * 0.72) : Math.max(0.18, 1 - Math.max(0, sweepNorm) * 0.75);
+
+          let bCenterCm, bPtsCm;
+          if (!isTV) {
+            // Suprapúbica
+            const bDepth = isFull ? (3.55 - tiltCm * 0.28) : (2.4 - tiltCm * 0.2);
+            const bX = isSag ? (-0.75 - sweepNorm * 0.5) : 0;
+            const bW = (isFull ? 3.5 : 1.35) * lateralFade;
+            const bH = (isFull ? 2.05 : 0.55) * lateralFade;
+            bCenterCm = { x: bX, y: bDepth };
+            // Formato triangular/trapezoidal suave típico de bexiga repleta
+            bPtsCm = [
+              { x: bX - bW * 0.95, y: bDepth - bH * 0.68 },
+              { x: bX + bW * 0.15, y: bDepth - bH * 0.78 },
+              { x: bX + bW * 0.98, y: bDepth - bH * 0.42 },
+              { x: bX + bW * 0.85, y: bDepth + bH * 0.58 },
+              { x: bX - bW * 0.1,  y: bDepth + bH * 0.82 },
+              { x: bX - bW * 0.92, y: bDepth + bH * 0.42 }
+            ];
+          } else {
+            // Transvaginal: bexiga anterior (esquerda no sagital, superior no transversal)
+            const bDepth = isSag ? (1.85 - tiltCm * 0.25) : (1.55 - tiltCm * 0.2);
+            const bX = isSag ? (-2.65 + (isFull ? 0.45 : 0)) : 0;
+            const bW = (isFull ? 2.1 : 0.95) * lateralFade;
+            const bH = (isFull ? 1.15 : 0.42) * lateralFade;
+            bCenterCm = { x: bX, y: bDepth };
+            bPtsCm = [
+              { x: bX - bW * 0.85, y: bDepth - bH * 0.65 },
+              { x: bX + bW * 0.85, y: bDepth - bH * 0.55 },
+              { x: bX + bW * 0.92, y: bDepth + bH * 0.45 },
+              { x: bX - bW * 0.15, y: bDepth + bH * 0.78 },
+              { x: bX - bW * 0.88, y: bDepth + bH * 0.45 }
+            ];
+          }
+
+          const bPtsPx = bPtsCm.map(pt => cmToPx(pt.x, pt.y));
+          const bCenterPx = cmToPx(bCenterCm.x, bCenterCm.y);
+
+          // Reforço acústico posterior (muito evidente na bexiga cheia!)
+          if (isFull) {
+            drawPosteriorEnhancement(targetCtx, bCenterPx, (isTV ? 3.2 : 6.4) * pxPerCm * lateralFade, isTV ? 0.16 : 0.28);
+          }
+
+          // Desenha lúmen anecoico da bexiga + parede detrusora fina hiperecoica
+          targetCtx.save();
+          traceSmoothClosedPoly(targetCtx, bPtsPx);
+          const blGrad = targetCtx.createLinearGradient(bCenterPx.x, bCenterPx.y - 40, bCenterPx.x, bCenterPx.y + 50);
+          blGrad.addColorStop(0, '#090d12'); // leve artefato de campo próximo anterior
+          blGrad.addColorStop(0.28, '#020406');
+          blGrad.addColorStop(1, '#010204');
+          targetCtx.fillStyle = blGrad;
+          targetCtx.fill();
+
+          // Parede vesical hiperecogênica
+          targetCtx.lineWidth = Math.max(2, pxPerCm * 0.13);
+          targetCtx.strokeStyle = `rgba(215,225,235,${isFull ? 0.75 : 0.55})`;
+          targetCtx.stroke();
+          targetCtx.restore();
+
+          renderedShapes.push({
+            id: 'bladder',
+            label: ANATOMY_DB.bladder.shortName,
+            color: ANATOMY_DB.bladder.color,
+            labelPos: bCenterPx,
+            hitTest: (px, py) => hitPolygon(px, py, bPtsPx),
+            drawOverlay: (oCtx) => {
+              traceSmoothClosedPoly(oCtx, bPtsPx);
+              oCtx.fill();
+              oCtx.stroke();
+            }
+          });
+        }
+
+        // -----------------------------------------------------------------------
+        // C) FUNDO DE SACO DE DOUGLAS (LÍQUIDO LIVRE FISIOLÓGICO)
+        // -----------------------------------------------------------------------
+        {
+          // Mais evidente na linha média / sagital ou transversal caudal, sobretudo nas fases periovulatória e secretora
+          const uterineVis = isSag ? Math.max(0, 1 - Math.abs(sweepNorm) * 1.45) : Math.max(0, 1 - Math.max(0, sweepNorm + 0.2) * 1.1);
+          if (uterineVis > 0.25) {
+            const fluidAmt = state.cyclePhase === 'proliferative' ? 0.55 : (state.cyclePhase === 'periovulatory' ? 1.12 : 0.95);
+            const dDepthCm = isTV ? (4.65 - tiltCm * 0.42) : (9.25 - tiltCm * 0.45);
+            const dXCm = isSag ? (isTV ? 1.35 : 1.75) : 0;
+            const dScale = fluidAmt * uterineVis * (isTV ? 1.0 : 1.15);
+
+            const dPtsCm = [
+              { x: dXCm - 0.95 * dScale, y: dDepthCm - 0.28 * dScale },
+              { x: dXCm + 0.15 * dScale, y: dDepthCm - 0.55 * dScale },
+              { x: dXCm + 1.05 * dScale, y: dDepthCm - 0.12 * dScale },
+              { x: dXCm + 0.65 * dScale, y: dDepthCm + 0.46 * dScale },
+              { x: dXCm - 0.55 * dScale, y: dDepthCm + 0.32 * dScale }
+            ];
+            const dPtsPx = dPtsCm.map(p => cmToPx(p.x, p.y));
+            const dCenterPx = cmToPx(dXCm, dDepthCm);
+
+            targetCtx.save();
+            traceSmoothClosedPoly(targetCtx, dPtsPx);
+            targetCtx.fillStyle = '#030508';
+            targetCtx.fill();
+            targetCtx.lineWidth = 1.4;
+            targetCtx.strokeStyle = 'rgba(180,205,215,0.45)';
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            renderedShapes.push({
+              id: 'douglas',
+              label: ANATOMY_DB.douglas.shortName,
+              color: ANATOMY_DB.douglas.color,
+              labelPos: dCenterPx,
+              hitTest: (px, py) => hitPolygon(px, py, dPtsPx),
+              drawOverlay: (oCtx) => {
+                traceSmoothClosedPoly(oCtx, dPtsPx);
+                oCtx.fill();
+                oCtx.stroke();
+              }
+            });
+          }
+        }
+
+        // -----------------------------------------------------------------------
+        // D) ÚTERO (MIOMÉTRIO), COLO UTERINO E ENDOMÉTRIO
+        // -----------------------------------------------------------------------
+        {
+          // No sagital, o útero aparece forte no centro (sweep ~0) e sai de foco ao ir para os anexos (|sweep| > 0.55)
+          // No transversal, o útero aparece em toda varredura de colo (sweep -1) até fundo (sweep +0.65)
+          const utVis = isSag
+            ? clamp(1 - Math.max(0, Math.abs(sweepNorm) - 0.18) / 0.48, 0, 1)
+            : clamp(1 - Math.max(0, sweepNorm - 0.62) / 0.35, 0.18, 1);
+
+          if (utVis > 0.08) {
+            const isRVF = state.uterinePos === 'RVF';
+            const baseDepthCm = isTV
+              ? (3.25 - tiltCm * 0.48 + (state.bladder === 'full' ? 0.35 : 0))
+              : (7.35 - tiltCm * 0.55 - (state.bladder === 'empty' ? 0.65 : 0));
+
+            if (isSag) {
+              // === CORTE SAGITAL (LONGITUDINAL) DO ÚTERO ===
+              // Em AVF: fundo voltado para esquerda/anterior (em direção à bexiga), colo à direita/caudal
+              // Em RVF: fundo curvado para direita/posterior (em direção ao reto/Douglas)
+              const s = (isTV ? 0.92 : 1.0) * (0.65 + 0.35 * utVis);
+              const shiftX = -sweepNorm * (isTV ? 1.8 : 2.2);
+
+              // Coordenadas anatômicas do corpo uterino e colo em cm
+              // Ponto de pivô: istmo uterino
+              const isthmus = { x: shiftX + (isRVF ? -0.3 : 0.75) * s, y: baseDepthCm + 0.45 * s };
+              const fundus = isRVF
+                ? { x: shiftX + 2.35 * s, y: baseDepthCm + 0.95 * s }
+                : { x: shiftX - 1.95 * s, y: baseDepthCm - 0.72 * s };
+              const cervixTip = isRVF
+                ? { x: shiftX - 1.85 * s, y: baseDepthCm + 0.55 * s }
+                : { x: shiftX + 2.45 * s, y: baseDepthCm + 1.05 * s };
+
+              // Vetor do eixo corpo-fundo
+              const bodyAngle = Math.atan2(fundus.y - isthmus.y, fundus.x - isthmus.x);
+              const bodyMid = { x: (isthmus.x + fundus.x) * 0.5, y: (isthmus.y + fundus.y) * 0.5 };
+              const bodyLenCm = Math.hypot(fundus.x - isthmus.x, fundus.y - isthmus.y);
+
+              // Vetor do colo
+              const cxAngle = Math.atan2(cervixTip.y - isthmus.y, cervixTip.x - isthmus.x);
+              const cxMid = { x: (isthmus.x + cervixTip.x) * 0.5, y: (isthmus.y + cervixTip.y) * 0.5 };
+              const cxLenCm = Math.hypot(cervixTip.x - isthmus.x, cervixTip.y - isthmus.y);
+
+              const pBodyMid = cmToPx(bodyMid.x, bodyMid.y);
+              const bodyRx = (bodyLenCm * 0.68) * pxPerCm;
+              const bodyRy = (1.68 * s) * pxPerCm;
+
+              const pCxMid = cmToPx(cxMid.x, cxMid.y);
+              const cxRx = (cxLenCm * 0.62) * pxPerCm;
+              const cxRy = (1.02 * s) * pxPerCm;
+
+              // --- 1. Desenha Colo Uterino ---
+              targetCtx.save();
+              targetCtx.globalAlpha = utVis;
+              targetCtx.translate(pCxMid.x, pCxMid.y);
+              targetCtx.rotate(cxAngle);
+              const cxGrad = targetCtx.createRadialGradient(0, -cxRy * 0.2, cxRy * 0.1, 0, 0, cxRx);
+              cxGrad.addColorStop(0, `rgb(${Math.round(108 * gainFactor)},${Math.round(112 * gainFactor)},${Math.round(118 * gainFactor)})`);
+              cxGrad.addColorStop(0.75, `rgb(${Math.round(78 * gainFactor)},${Math.round(82 * gainFactor)},${Math.round(88 * gainFactor)})`);
+              cxGrad.addColorStop(1, `rgb(${Math.round(52 * gainFactor)},${Math.round(56 * gainFactor)},${Math.round(62 * gainFactor)})`);
+              targetCtx.fillStyle = cxGrad;
+              targetCtx.beginPath();
+              targetCtx.ellipse(0, 0, cxRx, cxRy, 0, 0, Math.PI * 2);
+              targetCtx.fill();
+              targetCtx.lineWidth = 1.5;
+              targetCtx.strokeStyle = 'rgba(205,215,225,0.45)';
+              targetCtx.stroke();
+
+              // Canal endocervical fino
+              targetCtx.strokeStyle = state.cyclePhase === 'periovulatory' ? 'rgba(20,25,32,0.85)' : 'rgba(215,222,230,0.65)';
+              targetCtx.lineWidth = Math.max(2, pxPerCm * 0.12);
+              targetCtx.beginPath();
+              targetCtx.moveTo(-cxRx * 0.78, 0);
+              targetCtx.lineTo(cxRx * 0.78, 0);
+              targetCtx.stroke();
+              targetCtx.restore();
+
+              // --- 2. Desenha Corpo Uterino (Miométrio) ---
+              targetCtx.save();
+              targetCtx.globalAlpha = utVis;
+              targetCtx.translate(pBodyMid.x, pBodyMid.y);
+              targetCtx.rotate(bodyAngle);
+              const myoGrad = targetCtx.createRadialGradient(0, -bodyRy * 0.25, bodyRy * 0.15, 0, 0, bodyRx * 1.05);
+              myoGrad.addColorStop(0, `rgb(${Math.round(98 * gainFactor)},${Math.round(102 * gainFactor)},${Math.round(108 * gainFactor)})`);
+              myoGrad.addColorStop(0.72, `rgb(${Math.round(70 * gainFactor)},${Math.round(74 * gainFactor)},${Math.round(80 * gainFactor)})`);
+              myoGrad.addColorStop(1, `rgb(${Math.round(45 * gainFactor)},${Math.round(48 * gainFactor)},${Math.round(55 * gainFactor)})`);
+              targetCtx.fillStyle = myoGrad;
+              targetCtx.beginPath();
+              targetCtx.ellipse(0, 0, bodyRx, bodyRy, 0, 0, Math.PI * 2);
+              targetCtx.fill();
+
+              // Serosa uterina externa brilhante
+              targetCtx.lineWidth = Math.max(1.8, pxPerCm * 0.08);
+              targetCtx.strokeStyle = 'rgba(220,230,240,0.52)';
+              targetCtx.stroke();
+
+              // Zona juncional subendometrial (halo hipoecoico característico)
+              const endoThickCm = state.cyclePhase === 'proliferative' ? 0.40 : (state.cyclePhase === 'periovulatory' ? 1.00 : 1.35);
+              const endoRx = bodyRx * 0.72;
+              const endoRy = (endoThickCm * 0.5) * pxPerCm * s;
+
+              targetCtx.fillStyle = 'rgba(26,30,36,0.58)';
+              targetCtx.beginPath();
+              targetCtx.ellipse(0, 0, endoRx * 1.09, endoRy + pxPerCm * 0.18, 0, 0, Math.PI * 2);
+              targetCtx.fill();
+
+              // --- 3. Desenha Endométrio conforme fase do ciclo ---
+              if (state.cyclePhase === 'proliferative') {
+                // Proliferativa inicial: linha fina hiperecogênica (~4mm)
+                targetCtx.fillStyle = `rgba(235,240,248,${0.88 * utVis})`;
+                targetCtx.beginPath();
+                targetCtx.ellipse(0, 0, endoRx, Math.max(2.5, endoRy), 0, 0, Math.PI * 2);
+                targetCtx.fill();
+              } else if (state.cyclePhase === 'periovulatory') {
+                // Periovulatória: PADRÃO TRILAMINAR CLÁSSICO (~10mm)
+                // Fundo hipoecoico entre as linhas
+                targetCtx.fillStyle = 'rgba(54,60,70,0.92)';
+                targetCtx.beginPath();
+                targetCtx.ellipse(0, 0, endoRx, endoRy, 0, 0, Math.PI * 2);
+                targetCtx.fill();
+
+                // Bordas basais externas (2 linhas brilhantes superior e inferior)
+                targetCtx.strokeStyle = 'rgba(242,248,255,0.94)';
+                targetCtx.lineWidth = Math.max(2.0, pxPerCm * 0.13);
+                targetCtx.beginPath();
+                targetCtx.ellipse(0, 0, endoRx, endoRy, 0, 0, Math.PI * 2);
+                targetCtx.stroke();
+
+                // Linha central hiperecogênica (3ª linha da cavidade endometrial)
+                targetCtx.strokeStyle = 'rgba(248,252,255,0.96)';
+                targetCtx.lineWidth = Math.max(1.8, pxPerCm * 0.11);
+                targetCtx.beginPath();
+                targetCtx.moveTo(-endoRx * 0.88, 0);
+                targetCtx.lineTo(endoRx * 0.88, 0);
+                targetCtx.stroke();
+              } else {
+                // Secretora / Lútea: espessado hiperecogênico homogêneo (~13.5mm)
+                const secGrad = targetCtx.createRadialGradient(0, 0, endoRy * 0.1, 0, 0, endoRx);
+                secGrad.addColorStop(0, 'rgba(248,250,255,0.95)');
+                secGrad.addColorStop(0.75, 'rgba(222,230,240,0.92)');
+                secGrad.addColorStop(1, 'rgba(185,195,208,0.85)');
+                targetCtx.fillStyle = secGrad;
+                targetCtx.beginPath();
+                targetCtx.ellipse(0, 0, endoRx, endoRy, 0, 0, Math.PI * 2);
+                targetCtx.fill();
+              }
+              targetCtx.restore();
+
+              // Sinais Doppler nas artérias arqueadas/uterinas ao redor do miométrio
+              if (state.doppler && utVis > 0.5) {
+                dopplerSignals.push(
+                  { x: pBodyMid.x - bodyRx * 0.55, y: pBodyMid.y - bodyRy * 0.78, r: pxPerCm * 0.24, dir: 1, phase: 0.2 },
+                  { x: pBodyMid.x + bodyRx * 0.45, y: pBodyMid.y + bodyRy * 0.75, r: pxPerCm * 0.26, dir: -1, phase: 0.5 },
+                  { x: pCxMid.x + cxRx * 0.1, y: pCxMid.y + cxRy * 0.88, r: pxPerCm * 0.28, dir: 1, phase: 0.0 }
+                );
+              }
+
+              // Registro de Hit-Testing em ordem de prioridade (Miométrio -> Colo -> Endométrio por cima)
+              renderedShapes.push({
+                id: 'myometrium',
+                label: ANATOMY_DB.myometrium.shortName,
+                color: ANATOMY_DB.myometrium.color,
+                labelPos: { x: pBodyMid.x, y: pBodyMid.y - bodyRy * 0.65 },
+                hitTest: (px, py) => hitEllipse(px, py, pBodyMid.x, pBodyMid.y, bodyRx, bodyRy, bodyAngle),
+                drawOverlay: (oCtx) => {
+                  oCtx.save();
+                  oCtx.translate(pBodyMid.x, pBodyMid.y);
+                  oCtx.rotate(bodyAngle);
+                  oCtx.beginPath();
+                  oCtx.ellipse(0, 0, bodyRx, bodyRy, 0, 0, Math.PI * 2);
+                  oCtx.fill();
+                  oCtx.stroke();
+                  oCtx.restore();
+                }
+              });
+
+              renderedShapes.push({
+                id: 'cervix',
+                label: ANATOMY_DB.cervix.shortName,
+                color: ANATOMY_DB.cervix.color,
+                labelPos: pCxMid,
+                hitTest: (px, py) => hitEllipse(px, py, pCxMid.x, pCxMid.y, cxRx, cxRy, cxAngle),
+                drawOverlay: (oCtx) => {
+                  oCtx.save();
+                  oCtx.translate(pCxMid.x, pCxMid.y);
+                  oCtx.rotate(cxAngle);
+                  oCtx.beginPath();
+                  oCtx.ellipse(0, 0, cxRx, cxRy, 0, 0, Math.PI * 2);
+                  oCtx.fill();
+                  oCtx.stroke();
+                  oCtx.restore();
+                }
+              });
+
+              // Aumenta ligeiramente área clicável do endométrio fino para ótima usabilidade
+              const endoHitRy = Math.max(endoRy, 11);
+              renderedShapes.push({
+                id: 'endometrium',
+                label: `${ANATOMY_DB.endometrium.shortName} (${(endoThickCm * 10).toFixed(0)}mm)`,
+                color: ANATOMY_DB.endometrium.color,
+                labelPos: pBodyMid,
+                hitTest: (px, py) => hitEllipse(px, py, pBodyMid.x, pBodyMid.y, endoRx, endoHitRy, bodyAngle),
+                drawOverlay: (oCtx) => {
+                  oCtx.save();
+                  oCtx.translate(pBodyMid.x, pBodyMid.y);
+                  oCtx.rotate(bodyAngle);
+                  oCtx.beginPath();
+                  oCtx.ellipse(0, 0, endoRx, Math.max(4, endoRy), 0, 0, Math.PI * 2);
+                  oCtx.fill();
+                  oCtx.stroke();
+                  oCtx.restore();
+                }
+              });
+            } else {
+              // === CORTE TRANSVERSAL (AXIAL) DO ÚTERO ===
+              // sweepNorm -1 = Colo uterino (menor, arredondado)
+              // sweepNorm 0  = Corpo uterino (ovalado largo + endométrio central)
+              // sweepNorm +1 = Fundo/anexos
+              const isCervixCut = sweepNorm < -0.45;
+              const depthShift = (isRVF ? 0.55 : -0.15) * (sweepNorm + 0.5);
+              const utCenter = cmToPx(0, baseDepthCm + depthShift);
+
+              const widthFactor = isCervixCut ? 0.65 : (1.0 + Math.max(0, sweepNorm) * 0.22);
+              const rx = (isTV ? 2.15 : 2.55) * widthFactor * pxPerCm;
+              const ry = (isTV ? 1.55 : 1.75) * (isCervixCut ? 0.78 : 1.0) * pxPerCm;
+
+              targetCtx.save();
+              targetCtx.globalAlpha = utVis;
+              const tGrad = targetCtx.createRadialGradient(utCenter.x, utCenter.y - ry * 0.25, ry * 0.1, utCenter.x, utCenter.y, rx);
+              tGrad.addColorStop(0, `rgb(${Math.round(98 * gainFactor)},${Math.round(102 * gainFactor)},${Math.round(108 * gainFactor)})`);
+              tGrad.addColorStop(0.75, `rgb(${Math.round(68 * gainFactor)},${Math.round(72 * gainFactor)},${Math.round(78 * gainFactor)})`);
+              tGrad.addColorStop(1, `rgb(${Math.round(44 * gainFactor)},${Math.round(48 * gainFactor)},${Math.round(54 * gainFactor)})`);
+              targetCtx.fillStyle = tGrad;
+              targetCtx.beginPath();
+              targetCtx.ellipse(utCenter.x, utCenter.y, rx, ry, 0, 0, Math.PI * 2);
+              targetCtx.fill();
+              targetCtx.lineWidth = 1.8;
+              targetCtx.strokeStyle = 'rgba(220,230,240,0.5)';
+              targetCtx.stroke();
+
+              // Endométrio ou canal endocervical no centro do corte transversal
+              const endoThickCm = state.cyclePhase === 'proliferative' ? 0.40 : (state.cyclePhase === 'periovulatory' ? 1.00 : 1.35);
+              const eRx = isCervixCut ? rx * 0.28 : rx * 0.52;
+              const eRy = isCervixCut ? pxPerCm * 0.16 : (endoThickCm * 0.48) * pxPerCm;
+
+              if (isCervixCut) {
+                targetCtx.fillStyle = 'rgba(220,228,238,0.75)';
+                targetCtx.beginPath();
+                targetCtx.ellipse(utCenter.x, utCenter.y, eRx, eRy, 0, 0, Math.PI * 2);
+                targetCtx.fill();
+              } else {
+                // Halo juncional
+                targetCtx.fillStyle = 'rgba(25,28,34,0.55)';
+                targetCtx.beginPath();
+                targetCtx.ellipse(utCenter.x, utCenter.y, eRx * 1.15, eRy + pxPerCm * 0.16, 0, 0, Math.PI * 2);
+                targetCtx.fill();
+
+                if (state.cyclePhase === 'periovulatory') {
+                  targetCtx.fillStyle = 'rgba(56,62,72,0.92)';
+                  targetCtx.beginPath();
+                  targetCtx.ellipse(utCenter.x, utCenter.y, eRx, eRy, 0, 0, Math.PI * 2);
+                  targetCtx.fill();
+                  targetCtx.strokeStyle = 'rgba(244,250,255,0.95)';
+                  targetCtx.lineWidth = Math.max(2, pxPerCm * 0.12);
+                  targetCtx.stroke();
+                  targetCtx.beginPath();
+                  targetCtx.moveTo(utCenter.x - eRx * 0.85, utCenter.y);
+                  targetCtx.lineTo(utCenter.x + eRx * 0.85, utCenter.y);
+                  targetCtx.stroke();
+                } else {
+                  targetCtx.fillStyle = 'rgba(238,244,252,0.93)';
+                  targetCtx.beginPath();
+                  targetCtx.ellipse(utCenter.x, utCenter.y, eRx, Math.max(3, eRy), 0, 0, Math.PI * 2);
+                  targetCtx.fill();
+                }
+              }
+              targetCtx.restore();
+
+              // Vasos uterinos bilaterais nas margens laterais do útero no corte transversal
+              const vL = { x: utCenter.x - rx * 1.16, y: utCenter.y + ry * 0.15 };
+              const vR = { x: utCenter.x + rx * 1.16, y: utCenter.y + ry * 0.15 };
+              const vRad = pxPerCm * 0.34;
+              [vL, vR].forEach((vp, idx) => {
+                targetCtx.save();
+                targetCtx.fillStyle = '#04060a';
+                targetCtx.beginPath();
+                targetCtx.arc(vp.x, vp.y, vRad, 0, Math.PI * 2);
+                targetCtx.fill();
+                targetCtx.strokeStyle = 'rgba(205,215,228,0.55)';
+                targetCtx.lineWidth = 1.4;
+                targetCtx.stroke();
+                targetCtx.restore();
+
+                if (state.doppler) {
+                  dopplerSignals.push({ x: vp.x, y: vp.y, r: vRad * 1.15, dir: idx === 0 ? 1 : -1, phase: idx * 0.4 });
+                }
+              });
+
+              renderedShapes.push({
+                id: 'vessels',
+                label: ANATOMY_DB.vessels.shortName,
+                color: ANATOMY_DB.vessels.color,
+                labelPos: vR,
+                hitTest: (px, py) => Math.hypot(px - vL.x, py - vL.y) <= vRad * 1.6 || Math.hypot(px - vR.x, py - vR.y) <= vRad * 1.6,
+                drawOverlay: (oCtx) => {
+                  [vL, vR].forEach(vp => {
+                    oCtx.beginPath();
+                    oCtx.arc(vp.x, vp.y, vRad * 1.25, 0, Math.PI * 2);
+                    oCtx.fill();
+                    oCtx.stroke();
+                  });
+                }
+              });
+
+              const mainUtId = isCervixCut ? 'cervix' : 'myometrium';
+              renderedShapes.push({
+                id: mainUtId,
+                label: ANATOMY_DB[mainUtId].shortName,
+                color: ANATOMY_DB[mainUtId].color,
+                labelPos: { x: utCenter.x, y: utCenter.y - ry * 0.65 },
+                hitTest: (px, py) => hitEllipse(px, py, utCenter.x, utCenter.y, rx, ry, 0),
+                drawOverlay: (oCtx) => {
+                  oCtx.beginPath();
+                  oCtx.ellipse(utCenter.x, utCenter.y, rx, ry, 0, 0, Math.PI * 2);
+                  oCtx.fill();
+                  oCtx.stroke();
+                }
+              });
+
+              if (!isCervixCut) {
+                renderedShapes.push({
+                  id: 'endometrium',
+                  label: `${ANATOMY_DB.endometrium.shortName} (${(endoThickCm * 10).toFixed(0)}mm)`,
+                  color: ANATOMY_DB.endometrium.color,
+                  labelPos: utCenter,
+                  hitTest: (px, py) => hitEllipse(px, py, utCenter.x, utCenter.y, eRx, Math.max(eRy, 11), 0),
+                  drawOverlay: (oCtx) => {
+                    oCtx.beginPath();
+                    oCtx.ellipse(utCenter.x, utCenter.y, eRx, Math.max(4, eRy), 0, 0, Math.PI * 2);
+                    oCtx.fill();
+                    oCtx.stroke();
+                  }
+                });
+              }
+            }
+          }
+        }
+
+        // -----------------------------------------------------------------------
+        // E) OVÁRIOS, FOLÍCULOS / CORPO LÚTEO E VASOS ILÍACOS INTERNOS
+        // -----------------------------------------------------------------------
+        {
+          // Função auxiliar que desenha um ovário + vasos ilíacos adjacentes
+          const drawOvaryComplex = (side, visFactor, centerCm, hasDominantOrCL) => {
+            if (visFactor <= 0.08) return;
+            const pOv = cmToPx(centerCm.x, centerCm.y);
+            const ovRx = (isTV ? 1.55 : 1.72) * (0.7 + 0.3 * visFactor) * pxPerCm;
+            const ovRy = (isTV ? 1.05 : 1.15) * (0.7 + 0.3 * visFactor) * pxPerCm;
+            const rot = side === 'right' ? -0.18 : 0.18;
+
+            // --- Vaso Ilíaco Interno (reparo vascular posterior ao ovário!) ---
+            const vesX = pOv.x + (side === 'right' ? ovRx * 0.52 : -ovRx * 0.52);
+            const vesY = pOv.y + ovRy * 1.18;
+            const vesW = pxPerCm * (isSag ? 1.35 : 0.45);
+            const vesH = pxPerCm * 0.44;
+            const pulse = 1 + Math.sin(timeSec * 7.5) * 0.055; // pulsação arterial sutil ~72 bpm
+
+            targetCtx.save();
+            targetCtx.globalAlpha = visFactor;
+            targetCtx.translate(vesX, vesY);
+            targetCtx.rotate(isSag ? (side === 'right' ? -0.25 : 0.25) : 0);
+            targetCtx.fillStyle = '#030508';
+            targetCtx.beginPath();
+            targetCtx.ellipse(0, 0, vesW * pulse, vesH * pulse, 0, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.lineWidth = 1.6;
+            targetCtx.strokeStyle = 'rgba(220,232,244,0.65)';
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            if (state.doppler && visFactor > 0.35) {
+              dopplerSignals.push(
+                { x: vesX - vesW * 0.28, y: vesY, r: vesH * 1.1, dir: 1, phase: 0.1 },
+                { x: vesX + vesW * 0.28, y: vesY, r: vesH * 1.1, dir: -1, phase: 0.35 }
+              );
+            }
+
+            renderedShapes.push({
+              id: 'vessels',
+              label: 'Vasos Ilíacos',
+              color: ANATOMY_DB.vessels.color,
+              labelPos: { x: vesX, y: vesY },
+              hitTest: (px, py) => hitEllipse(px, py, vesX, vesY, Math.max(vesW, 14), Math.max(vesH, 12), isSag ? (side === 'right' ? -0.25 : 0.25) : 0),
+              drawOverlay: (oCtx) => {
+                oCtx.save();
+                oCtx.translate(vesX, vesY);
+                oCtx.rotate(isSag ? (side === 'right' ? -0.25 : 0.25) : 0);
+                oCtx.beginPath();
+                oCtx.ellipse(0, 0, vesW, vesH, 0, 0, Math.PI * 2);
+                oCtx.fill();
+                oCtx.stroke();
+                oCtx.restore();
+              }
+            });
+
+            // Reforço acústico posterior caso haja folículo dominante grande
+            if (hasDominantOrCL && state.cyclePhase === 'periovulatory' && visFactor > 0.45) {
+              drawPosteriorEnhancement(targetCtx, { x: pOv.x + ovRx * 0.15, y: pOv.y }, ovRx * 1.1, 0.2 * visFactor);
+            }
+
+            // --- Estroma Ovariano ---
+            targetCtx.save();
+            targetCtx.globalAlpha = visFactor;
+            targetCtx.translate(pOv.x, pOv.y);
+            targetCtx.rotate(rot);
+
+            const ovGrad = targetCtx.createRadialGradient(0, 0, ovRy * 0.1, 0, 0, ovRx);
+            ovGrad.addColorStop(0, `rgb(${Math.round(84 * gainFactor)},${Math.round(88 * gainFactor)},${Math.round(96 * gainFactor)})`);
+            ovGrad.addColorStop(0.85, `rgb(${Math.round(56 * gainFactor)},${Math.round(60 * gainFactor)},${Math.round(66 * gainFactor)})`);
+            ovGrad.addColorStop(1, `rgb(${Math.round(42 * gainFactor)},${Math.round(45 * gainFactor)},${Math.round(52 * gainFactor)})`);
+            targetCtx.fillStyle = ovGrad;
+            targetCtx.beginPath();
+            targetCtx.ellipse(0, 0, ovRx, ovRy, 0, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.lineWidth = 1.4;
+            targetCtx.strokeStyle = 'rgba(195,208,220,0.48)';
+            targetCtx.stroke();
+
+            // Folículos antrais periféricos (pequenos cistos anecoicos 3-6mm)
+            const smallFollicles = [
+              { x: -0.52, y: -0.32, r: 0.22 },
+              { x: -0.20, y: -0.46, r: 0.18 },
+              { x: -0.58, y: 0.22,  r: 0.24 },
+              { x: -0.15, y: 0.44,  r: 0.20 },
+              { x: 0.48,  y: 0.35,  r: 0.19 },
+              { x: 0.52,  y: -0.35, r: 0.21 }
+            ];
+            smallFollicles.forEach(f => {
+              // Evita sobrepor onde fica o folículo dominante / corpo lúteo
+              if (hasDominantOrCL && state.cyclePhase !== 'proliferative' && f.x > 0.1) return;
+              targetCtx.fillStyle = '#030508';
+              targetCtx.beginPath();
+              targetCtx.arc(f.x * ovRx, f.y * ovRy, f.r * pxPerCm, 0, Math.PI * 2);
+              targetCtx.fill();
+              targetCtx.strokeStyle = 'rgba(175,185,198,0.35)';
+              targetCtx.lineWidth = 1;
+              targetCtx.stroke();
+            });
+
+            // Estrutura funcional do ciclo no ovário dominante (Direito)
+            if (hasDominantOrCL && state.cyclePhase === 'periovulatory') {
+              // Folículo Dominante de Graaf (~19 mm = raio 0.95 cm)
+              const fRad = 0.82 * pxPerCm * (0.75 + 0.25 * visFactor);
+              const fx = ovRx * 0.25;
+              const fy = -ovRy * 0.04;
+              targetCtx.fillStyle = '#020407';
+              targetCtx.beginPath();
+              targetCtx.arc(fx, fy, fRad, 0, Math.PI * 2);
+              targetCtx.fill();
+              targetCtx.strokeStyle = 'rgba(220,232,245,0.72)';
+              targetCtx.lineWidth = 1.5;
+              targetCtx.stroke();
+            } else if (hasDominantOrCL && state.cyclePhase === 'secretory') {
+              // Corpo Lúteo (parede espessa crenado/irregular + ecos finos internos)
+              const clRad = 0.68 * pxPerCm * (0.75 + 0.25 * visFactor);
+              const clX = ovRx * 0.22;
+              const clY = 0;
+
+              // Parede espessa hiperecogênica crenado
+              targetCtx.fillStyle = 'rgba(162,172,185,0.88)';
+              targetCtx.beginPath();
+              for (let a = 0; a < Math.PI * 2; a += 0.35) {
+                const wobble = 1 + 0.12 * Math.sin(a * 7);
+                const px = clX + Math.cos(a) * clRad * wobble;
+                const py = clY + Math.sin(a) * clRad * 0.92 * wobble;
+                if (a === 0) targetCtx.moveTo(px, py);
+                else targetCtx.lineTo(px, py);
+              }
+              targetCtx.closePath();
+              targetCtx.fill();
+
+              // Centro hipoecoico com finos ecos hemorrágicos
+              targetCtx.fillStyle = 'rgba(22,26,34,0.92)';
+              targetCtx.beginPath();
+              targetCtx.arc(clX, clY, clRad * 0.58, 0, Math.PI * 2);
+              targetCtx.fill();
+
+              // SINAL DO "ANEL DE FOGO" AO DOPPLER COLORIDO!
+              if (state.doppler && visFactor > 0.4) {
+                const cosR = Math.cos(rot), sinR = Math.sin(rot);
+                const worldClX = pOv.x + clX * cosR - clY * sinR;
+                const worldClY = pOv.y + clX * sinR + clY * cosR;
+                dopplerSignals.push({
+                  type: 'ringOfFire',
+                  x: worldClX,
+                  y: worldClY,
+                  r: clRad * 0.88
+                });
+              }
+            }
+
+            targetCtx.restore();
+
+            const ovTitle = side === 'right'
+              ? (state.cyclePhase === 'periovulatory' ? 'Ovário Dir. (Fol. Dom.)' : state.cyclePhase === 'secretory' ? 'Ovário Dir. (Corpo Lúteo)' : 'Ovário Direito')
+              : 'Ovário Esquerdo';
+
+            renderedShapes.push({
+              id: 'ovary',
+              label: ovTitle,
+              color: ANATOMY_DB.ovary.color,
+              labelPos: pOv,
+              hitTest: (px, py) => hitEllipse(px, py, pOv.x, pOv.y, ovRx, ovRy, rot),
+              drawOverlay: (oCtx) => {
+                oCtx.save();
+                oCtx.translate(pOv.x, pOv.y);
+                oCtx.rotate(rot);
+                oCtx.beginPath();
+                oCtx.ellipse(0, 0, ovRx, ovRy, 0, 0, Math.PI * 2);
+                oCtx.fill();
+                oCtx.stroke();
+                oCtx.restore();
+              }
+            });
+          };
+
+          if (isSag) {
+            // No plano sagital, varrendo para esquerda (sweep < -28) entra o Ovário Esquerdo;
+            // varrendo para direita (sweep > +28) entra o Ovário Direito (com folículo dominante/corpo lúteo)
+            const leftVis = clamp((-sweepNorm - 0.25) / 0.48, 0, 1);
+            const rightVis = clamp((sweepNorm - 0.25) / 0.48, 0, 1);
+            const ovDepthCm = isTV ? (3.55 - tiltCm * 0.42) : (7.8 - tiltCm * 0.48);
+
+            drawOvaryComplex('left', leftVis, { x: -0.35 + (1 - leftVis) * 1.4, y: ovDepthCm }, false);
+            drawOvaryComplex('right', rightVis, { x: 0.35 - (1 - rightVis) * 1.4, y: ovDepthCm }, true);
+          } else {
+            // No plano transversal, os anexos (ovários bilateralmente) entram conforme varremos cranialmente (sweep > -10)
+            const adnexaVis = clamp((sweepNorm + 0.12) / 0.65, 0, 1);
+            const ovDepthCm = isTV ? (3.45 - tiltCm * 0.42) : (7.5 - tiltCm * 0.48);
+            const sepX = isTV ? 3.1 : 3.9;
+            // Na convenção radiológica transversal: lado esquerdo da imagem = lado DIREITO da paciente!
+            drawOvaryComplex('right', adnexaVis, { x: -sepX, y: ovDepthCm + 0.3 }, true);
+            drawOvaryComplex('left', adnexaVis, { x: sepX, y: ovDepthCm + 0.3 }, false);
+          }
+        }
+
+        // -----------------------------------------------------------------------
+        // F) ARTEFATO DE BEXIGA VAZIA NA VIA SUPRAPÚBICA (GÁS & REVERBERAÇÃO)
+        // -----------------------------------------------------------------------
+        if (poorTAWindow) {
+          // Quando a bexiga está vazia na via TA, alças anteriores degradam severamente a janela acústica
+          const gasGrad = targetCtx.createLinearGradient(0, cmToPx(0, 2.2).y, 0, cmToPx(0, state.depth).y);
+          gasGrad.addColorStop(0, 'rgba(185,195,205,0.52)');
+          gasGrad.addColorStop(0.22, 'rgba(20,24,30,0.72)');
+          gasGrad.addColorStop(1, 'rgba(4,6,9,0.84)');
+          targetCtx.fillStyle = gasGrad;
+          targetCtx.fillRect(0, cmToPx(0, 2.2).y, w, h);
+
+          // Linhas horizontais de reverberação gasosa (artefato em cauda de cometa / anéis)
+          for (let r = 0; r < 9; r++) {
+            const rRad = beamGeom.rStart + (2.3 + r * 0.85) * pxPerCm;
+            targetCtx.strokeStyle = `rgba(215,225,238,${Math.max(0.05, 0.36 - r * 0.036)})`;
+            targetCtx.lineWidth = Math.max(1.5, 4 - r * 0.35);
+            targetCtx.beginPath();
+            targetCtx.arc(beamGeom.cx, beamGeom.apexY, rRad, Math.PI / 2 - beamGeom.halfAngle, Math.PI / 2 + beamGeom.halfAngle);
+            targetCtx.stroke();
+          }
+        }
+
+        // -----------------------------------------------------------------------
+        // G) CAMADA DE SPECKLE ULTRASSONOGRÁFICO EM TEMPO REAL
+        // -----------------------------------------------------------------------
+        {
+          // Escolhe tile de speckle conforme a frequência/via (alta freq = grão fino)
+          const tile = (isTV || state.freq >= 5.0) ? speckleHigh : speckleLow;
+          // Desloca levemente a textura a cada frame (jitter orgânico de feixe ao vivo)
+          const jx = Math.floor((timeSec * 37) % 128);
+          const jy = Math.floor((timeSec * 53) % 128);
+
+          targetCtx.save();
+          // Overlay dá granulação realista mantendo áreas anecoicas (preto) limpas e tecidos texturizados!
+          targetCtx.globalCompositeOperation = 'overlay';
+          targetCtx.globalAlpha = isTV ? 0.56 : 0.66;
+          targetCtx.translate(-jx, -jy);
+          const pat = targetCtx.createPattern(tile, 'repeat');
+          targetCtx.fillStyle = pat;
+          targetCtx.fillRect(jx, jy, w + 128, h + 128);
+          targetCtx.restore();
+
+          // Leve ruído de linha de varredura radial (linhas de cristais piezoelétricos)
+          targetCtx.save();
+          targetCtx.strokeStyle = 'rgba(255,255,255,0.028)';
+          targetCtx.lineWidth = 1;
+          const rays = 34;
+          for (let i = 0; i <= rays; i++) {
+            const a = (Math.PI / 2 - beamGeom.halfAngle) + (i / rays) * (beamGeom.halfAngle * 2);
+            targetCtx.beginPath();
+            targetCtx.moveTo(beamGeom.cx + Math.cos(a) * beamGeom.rStart, beamGeom.apexY + Math.sin(a) * beamGeom.rStart);
+            targetCtx.lineTo(beamGeom.cx + Math.cos(a) * beamGeom.rEnd, beamGeom.apexY + Math.sin(a) * beamGeom.rEnd);
+            targetCtx.stroke();
+          }
+          targetCtx.restore();
+
+          // Ajuste global de brilho/contraste pelo Ganho (Gain)
+          if (state.gain > 68) {
+            const extra = ((state.gain - 68) / 32) * 0.24;
+            targetCtx.save();
+            targetCtx.fillStyle = `rgba(215,228,240,${extra})`;
+            targetCtx.fillRect(0, 0, w, h);
+            targetCtx.restore();
+          } else if (state.gain < 55) {
+            const dim = ((55 - state.gain) / 40) * 0.55;
+            targetCtx.save();
+            targetCtx.fillStyle = `rgba(0,0,0,${dim})`;
+            targetCtx.fillRect(0, 0, w, h);
+            targetCtx.restore();
+          }
+        }
+
+        // -----------------------------------------------------------------------
+        // H) DOPPLER COLORIDO (CAIXA ROI + FLUXO PULSÁTIL BART)
+        // -----------------------------------------------------------------------
+        if (state.doppler) {
+          renderColorDoppler(targetCtx, dopplerSignals, timeSec);
+        }
+
+        // Fecha o recorte do setor
+        targetCtx.restore();
+
+        // Contorno sutil do leque setorial
+        targetCtx.save();
+        defineSectorPath(targetCtx);
+        targetCtx.strokeStyle = 'rgba(148,163,184,0.22)';
+        targetCtx.lineWidth = 1.2;
+        targetCtx.stroke();
+        targetCtx.restore();
+      }
+
+      // Renderiza a caixa ROI do Doppler Colorido e os sinais vasculares pulsáteis
+      function renderColorDoppler(targetCtx, signals, timeSec) {
+        // Pulso cardíaco fisiológico (~72 bpm = 1.2 Hz) com pico sistólico e fluxo diastólico
+        const beatPhase = (timeSec * 1.2) % 1;
+        const systole = Math.exp(-Math.pow((beatPhase - 0.18) / 0.11, 2));
+        const diastole = 0.35 + 0.22 * Math.exp(-Math.pow((beatPhase - 0.45) / 0.18, 2));
+        const pulseAmp = clamp(diastole + systole * 0.72, 0.3, 1.0);
+
+        // Caixa ROI setorial verde-amarelada característica do console de USG
+        const roiR1 = beamGeom.rStart + (beamGeom.rEnd - beamGeom.rStart) * 0.18;
+        const roiR2 = beamGeom.rStart + (beamGeom.rEnd - beamGeom.rStart) * 0.78;
+        const roiHalf = beamGeom.halfAngle * 0.62;
+        const a1 = Math.PI / 2 - roiHalf;
+        const a2 = Math.PI / 2 + roiHalf;
+
+        targetCtx.save();
+        targetCtx.beginPath();
+        targetCtx.arc(beamGeom.cx, beamGeom.apexY, roiR1, a1, a2, false);
+        targetCtx.arc(beamGeom.cx, beamGeom.apexY, roiR2, a2, a1, true);
+        targetCtx.closePath();
+
+        targetCtx.save();
+        targetCtx.clip();
+
+        // Renderiza cada sinal de fluxo dentro da caixa ROI
+        signals.forEach(sig => {
+          if (sig.type === 'ringOfFire') {
+            // Anel vascular periférico completo do Corpo Lúteo (vermelho/amarelo de um lado, azul/ciano do outro)
+            const segments = 16;
+            for (let i = 0; i < segments; i++) {
+              const ang = (i / segments) * Math.PI * 2 + timeSec * 0.25;
+              const sx = sig.x + Math.cos(ang) * sig.r;
+              const sy = sig.y + Math.sin(ang) * sig.r;
+              const isRed = Math.sin(ang + 0.6) >= 0;
+              const segAmp = pulseAmp * (0.7 + 0.3 * Math.sin(ang * 3 + timeSec * 5));
+              const rad = Math.max(5, sig.r * 0.32 * segAmp);
+
+              const g = targetCtx.createRadialGradient(sx, sy, 1, sx, sy, rad);
+              if (isRed) {
+                g.addColorStop(0, `rgba(255,220,60,${0.9 * segAmp})`);
+                g.addColorStop(0.45, `rgba(239,68,68,${0.85 * segAmp})`);
+                g.addColorStop(1, 'rgba(185,28,28,0)');
+              } else {
+                g.addColorStop(0, `rgba(56,189,248,${0.9 * segAmp})`);
+                g.addColorStop(0.45, `rgba(37,99,235,${0.85 * segAmp})`);
+                g.addColorStop(1, 'rgba(29,78,216,0)');
+              }
+              targetCtx.fillStyle = g;
+              targetCtx.beginPath();
+              targetCtx.arc(sx, sy, rad, 0, Math.PI * 2);
+              targetCtx.fill();
+            }
+          } else {
+            // Fluxo arterial/venoso focal
+            const localPulse = clamp(pulseAmp * (0.82 + 0.18 * Math.sin(timeSec * 7.5 + (sig.phase || 0))), 0.35, 1);
+            const r = Math.max(5, sig.r * localPulse);
+            const g = targetCtx.createRadialGradient(sig.x, sig.y, 1, sig.x, sig.y, r);
+            if (sig.dir > 0) {
+              g.addColorStop(0, `rgba(253,224,71,${0.88 * localPulse})`);
+              g.addColorStop(0.45, `rgba(239,68,68,${0.85 * localPulse})`);
+              g.addColorStop(1, 'rgba(185,28,28,0)');
+            } else {
+              g.addColorStop(0, `rgba(103,232,249,${0.88 * localPulse})`);
+              g.addColorStop(0.45, `rgba(37,99,235,${0.85 * localPulse})`);
+              g.addColorStop(1, 'rgba(30,64,175,0)');
+            }
+            targetCtx.fillStyle = g;
+            targetCtx.beginPath();
+            targetCtx.arc(sig.x, sig.y, r, 0, Math.PI * 2);
+            targetCtx.fill();
+          }
+        });
+        targetCtx.restore();
+
+        // Borda fina da caixa ROI
+        targetCtx.strokeStyle = 'rgba(250,204,21,0.72)';
+        targetCtx.lineWidth = 1.25;
+        targetCtx.setLineDash([4, 3]);
+        targetCtx.stroke();
+        targetCtx.setLineDash([]);
+        targetCtx.restore();
+      }
+
+      // =========================================================================
+      // 9. OVERLAYS DO MONITOR (RÉGUA, ESCALA DE CINZA, GABARITO, PAQUÍMETRO)
+      // =========================================================================
+      function renderMonitorOverlays(targetCtx) {
+        const w = beamGeom.width;
+        const h = beamGeom.height;
+
+        // 1) Régua Lateral Direita de Profundidade em cm
+        targetCtx.save();
+        const rulerX = w - 12;
+        targetCtx.font = '10px "JetBrains Mono", monospace';
+        targetCtx.textAlign = 'right';
+        targetCtx.textBaseline = 'middle';
+
+        const maxCm = Math.floor(state.depth);
+        for (let cm = 0; cm <= maxCm; cm++) {
+          const y = cmToPx(0, cm).y;
+          if (y < 34 || y > h - 14) continue;
+          const isMajor = cm % 2 === 0;
+          targetCtx.strokeStyle = isMajor ? 'rgba(148,163,184,0.85)' : 'rgba(100,116,139,0.45)';
+          targetCtx.lineWidth = isMajor ? 1.5 : 1;
+          targetCtx.beginPath();
+          targetCtx.moveTo(rulerX - (isMajor ? 9 : 5), y);
+          targetCtx.lineTo(rulerX, y);
+          targetCtx.stroke();
+
+          if (isMajor && cm > 0) {
+            targetCtx.fillStyle = 'rgba(148,163,184,0.88)';
+            targetCtx.fillText(`${cm}`, rulerX - 12, y);
+          }
+        }
+        targetCtx.fillStyle = 'rgba(6,182,212,0.85)';
+        targetCtx.fillText('cm', rulerX - 10, 44);
+        targetCtx.restore();
+
+        // 2) Barra de Escala de Cinza (e escala BART se Doppler ativo) na lateral esquerda
+        targetCtx.save();
+        const barX = 12;
+        const barTop = 58;
+        const barH = Math.min(140, h * 0.34);
+        const barW = 8;
+
+        const gsGrad = targetCtx.createLinearGradient(0, barTop, 0, barTop + barH);
+        gsGrad.addColorStop(0, '#ffffff');
+        gsGrad.addColorStop(0.5, '#7a7a7a');
+        gsGrad.addColorStop(1, '#050505');
+        targetCtx.fillStyle = gsGrad;
+        targetCtx.fillRect(barX, barTop, barW, barH);
+        targetCtx.strokeStyle = 'rgba(148,163,184,0.4)';
+        targetCtx.lineWidth = 1;
+        targetCtx.strokeRect(barX, barTop, barW, barH);
+
+        // Escala BART (Doppler Colorido) logo abaixo da barra de cinza
+        if (state.doppler) {
+          const dTop = barTop + barH + 18;
+          const dH = 74;
+          const dGrad = targetCtx.createLinearGradient(0, dTop, 0, dTop + dH);
+          dGrad.addColorStop(0, '#fde047');
+          dGrad.addColorStop(0.38, '#ef4444');
+          dGrad.addColorStop(0.5, '#090d14');
+          dGrad.addColorStop(0.62, '#2563eb');
+          dGrad.addColorStop(1, '#38bdf8');
+          targetCtx.fillStyle = dGrad;
+          targetCtx.fillRect(barX, dTop, barW, dH);
+          targetCtx.strokeStyle = 'rgba(148,163,184,0.45)';
+          targetCtx.strokeRect(barX, dTop, barW, dH);
+
+          targetCtx.font = '9px "JetBrains Mono", monospace';
+          targetCtx.fillStyle = '#fca5a5';
+          targetCtx.fillText('+24', barX + 12, dTop + 5);
+          targetCtx.fillStyle = '#93c5fd';
+          targetCtx.fillText('-24', barX + 12, dTop + dH - 2);
+        }
+
+        // Marcador de Orientação (Dot da Sonda: Esquerda da tela = Cranial/Anterior no Sagital, Direita da Paciente no Transversal)
+        const probeDotX = beamGeom.cx - Math.sin(beamGeom.halfAngle) * beamGeom.rStart - 16;
+        const probeDotY = beamGeom.apexY + Math.cos(beamGeom.halfAngle) * beamGeom.rStart + 6;
+        targetCtx.fillStyle = '#06b6d4';
+        targetCtx.beginPath();
+        targetCtx.arc(probeDotX, probeDotY, 4, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.font = '9px "JetBrains Mono", monospace';
+        targetCtx.fillStyle = 'rgba(103,232,249,0.85)';
+        targetCtx.textAlign = 'right';
+        targetCtx.fillText(state.plane === 'sagittal' ? 'CRAN/ANT' : 'DIR (P)', probeDotX - 7, probeDotY + 3);
+        targetCtx.restore();
+
+        // 3) Sobreposição Anatômica (Gabarito Completo OU Destaque de Estrutura Selecionada / Quiz)
+        const highlightId = state.activeTab === 'quiz'
+          ? state.quizHighlightStructure
+          : (state.activeTab === 'atlas' ? state.selectedStructure : null);
+
+        if (state.overlay || highlightId || (state.hoverStructure && state.activeTab !== 'quiz' && !state.caliperMode)) {
+          targetCtx.save();
+          defineSectorPath(targetCtx);
+          targetCtx.clip();
+
+          // Agrupa para não duplicar etiquetas do mesmo id
+          const labeledIds = new Set();
+          renderedShapes.forEach(shape => {
+            const isHighlighted = shape.id === highlightId;
+            const isHovered = shape.id === state.hoverStructure && state.activeTab !== 'quiz' && !state.caliperMode;
+            const showFull = state.overlay && state.activeTab !== 'quiz';
+
+            if (!showFull && !isHighlighted && !isHovered) return;
+
+            targetCtx.save();
+            targetCtx.fillStyle = hexToRgba(shape.color, isHighlighted ? 0.28 : (isHovered ? 0.22 : 0.16));
+            targetCtx.strokeStyle = hexToRgba(shape.color, isHighlighted ? 0.98 : 0.8);
+            targetCtx.lineWidth = isHighlighted ? 2.6 : 1.6;
+            if (!isHighlighted) targetCtx.setLineDash([4, 3]);
+            shape.drawOverlay(targetCtx);
+            targetCtx.restore();
+
+            // Etiqueta legível sobre a estrutura
+            if ((showFull || isHighlighted) && !labeledIds.has(shape.id)) {
+              labeledIds.add(shape.id);
+              drawStructureBadge(targetCtx, shape.label, shape.labelPos.x, shape.labelPos.y, shape.color, isHighlighted);
+            }
+          });
+          targetCtx.restore();
+        }
+
+        // 4) Medições do Paquímetro (Caliper) em mm e cm reais
+        renderMeasurements(targetCtx);
+      }
+
+      function hexToRgba(hex, alpha) {
+        const clean = hex.replace('#', '');
+        const r = parseInt(clean.substring(0, 2), 16);
+        const g = parseInt(clean.substring(2, 4), 16);
+        const b = parseInt(clean.substring(4, 6), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+
+      function drawStructureBadge(targetCtx, text, x, y, color, emphasized) {
+        targetCtx.save();
+        targetCtx.font = `${emphasized ? 'bold ' : ''}11px Inter, sans-serif`;
+        const metrics = targetCtx.measureText(text);
+        const padX = 7;
+        const boxW = metrics.width + padX * 2;
+        const boxH = 20;
+        const bx = clamp(x - boxW / 2, 26, beamGeom.width - boxW - 32);
+        const by = clamp(y - boxH / 2, 44, beamGeom.height - boxH - 42);
+
+        targetCtx.fillStyle = 'rgba(7,10,16,0.86)';
+        targetCtx.strokeStyle = color;
+        targetCtx.lineWidth = emphasized ? 1.8 : 1.2;
+        roundRect(targetCtx, bx, by, boxW, boxH, 6);
+        targetCtx.fill();
+        targetCtx.stroke();
+
+        targetCtx.fillStyle = '#f8fafc';
+        targetCtx.textAlign = 'center';
+        targetCtx.textBaseline = 'middle';
+        targetCtx.fillText(text, bx + boxW / 2, by + boxH / 2 + 0.5);
+        targetCtx.restore();
+      }
+
+      function roundRect(targetCtx, x, y, w, h, r) {
+        targetCtx.beginPath();
+        targetCtx.moveTo(x + r, y);
+        targetCtx.arcTo(x + w, y, x + w, y + h, r);
+        targetCtx.arcTo(x + w, y + h, x, y + h, r);
+        targetCtx.arcTo(x, y + h, x, y, r);
+        targetCtx.arcTo(x, y, x + w, y, r);
+        targetCtx.closePath();
+      }
+
+      // Renderiza linhas e cruzes (+) do Paquímetro com distância anatômica em mm / cm
+      function renderMeasurements(targetCtx) {
+        const drawCross = (x, y, color) => {
+          targetCtx.save();
+          targetCtx.strokeStyle = color;
+          targetCtx.lineWidth = 1.8;
+          targetCtx.beginPath();
+          targetCtx.moveTo(x - 6, y);
+          targetCtx.lineTo(x + 6, y);
+          targetCtx.moveTo(x, y - 6);
+          targetCtx.lineTo(x, y + 6);
+          targetCtx.stroke();
+          targetCtx.restore();
+        };
+
+        const colors = ['#facc15', '#38bdf8', '#34d399', '#fb7185'];
+
+        state.measurements.forEach((m, idx) => {
+          const col = colors[idx % colors.length];
+          const p1 = cmToPx(m.p1.xCm, m.p1.yCm);
+          const p2 = cmToPx(m.p2.xCm, m.p2.yCm);
+          const distCm = Math.hypot(m.p2.xCm - m.p1.xCm, m.p2.yCm - m.p1.yCm);
+          const distMm = distCm * 10;
+          const label = distMm < 20 ? `D${idx + 1}: ${distMm.toFixed(1)} mm` : `D${idx + 1}: ${distCm.toFixed(2)} cm (${distMm.toFixed(0)} mm)`;
+
+          targetCtx.save();
+          targetCtx.strokeStyle = col;
+          targetCtx.lineWidth = 1.5;
+          targetCtx.setLineDash([4, 4]);
+          targetCtx.beginPath();
+          targetCtx.moveTo(p1.x, p1.y);
+          targetCtx.lineTo(p2.x, p2.y);
+          targetCtx.stroke();
+          targetCtx.setLineDash([]);
+          targetCtx.restore();
+
+          drawCross(p1.x, p1.y, col);
+          drawCross(p2.x, p2.y, col);
+
+          // Rótulo no ponto médio
+          const mx = (p1.x + p2.x) / 2;
+          const my = (p1.y + p2.y) / 2 - 14;
+          drawStructureBadge(targetCtx, label, mx, my, col, true);
+        });
+
+        // Ponto inicial pendente (enquanto aguarda 2º clique)
+        if (state.pendingPoint) {
+          const p1 = cmToPx(state.pendingPoint.xCm, state.pendingPoint.yCm);
+          drawCross(p1.x, p1.y, '#facc15');
+          if (pointerPos.inside) {
+            targetCtx.save();
+            targetCtx.strokeStyle = 'rgba(250,204,21,0.65)';
+            targetCtx.lineWidth = 1.2;
+            targetCtx.setLineDash([3, 3]);
+            targetCtx.beginPath();
+            targetCtx.moveTo(p1.x, p1.y);
+            targetCtx.lineTo(pointerPos.x, pointerPos.y);
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            const p2Cm = pxToCm(pointerPos.x, pointerPos.y);
+            const liveMm = Math.hypot(p2Cm.xCm - state.pendingPoint.xCm, p2Cm.yCm - state.pendingPoint.yCm) * 10;
+            drawStructureBadge(targetCtx, `${liveMm.toFixed(1)} mm`, pointerPos.x + 28, pointerPos.y - 16, '#facc15', false);
+          }
+        }
+      }
+
+      // =========================================================================
+      // 10. MINI-DIAGRAMA ANATÔMICO ESQUEMÁTICO 2D SINCRONIZADO
+      // =========================================================================
+      function renderMiniDiagram() {
+        const w = dom.diagramCanvas.width;
+        const h = dom.diagramCanvas.height;
+        diagCtx.clearRect(0, 0, w, h);
+
+        // Fundo sutil com grid anatômico
+        diagCtx.fillStyle = '#080d16';
+        diagCtx.fillRect(0, 0, w, h);
+
+        const isSag = state.plane === 'sagittal';
+        const isTV = state.route === 'TV';
+        const isRVF = state.uterinePos === 'RVF';
+        const sweepNorm = state.sweep / 100;
+        const tiltRad = (state.tilt * Math.PI) / 180;
+
+        // Atualiza rótulo do mini-diagrama
+        if (isSag) {
+          const sideTxt = sweepNorm < -0.25 ? 'ESQ' : (sweepNorm > 0.25 ? 'DIR' : 'MID');
+          dom.miniDiagramPlaneLabel.textContent = `SAG • ${sideTxt}`;
+        } else {
+          const levelTxt = sweepNorm < -0.35 ? 'COLO' : (sweepNorm > 0.35 ? 'FUNDO' : 'CORPO');
+          dom.miniDiagramPlaneLabel.textContent = `AXIAL • ${levelTxt}`;
+        }
+
+        if (isSag) {
+          // --- VISTA LATERAL ESQUEMÁTICA DA PELVE FEMININA ---
+          // Contorno anterior (pele abdominal)
+          diagCtx.strokeStyle = '#334155';
+          diagCtx.lineWidth = 2;
+          diagCtx.beginPath();
+          diagCtx.moveTo(14, 16);
+          diagCtx.quadraticCurveTo(60, 12, 118, 22);
+          diagCtx.stroke();
+
+          // Bexiga (esquerda/anterior)
+          diagCtx.fillStyle = state.bladder === 'full' ? 'rgba(56,189,248,0.45)' : 'rgba(56,189,248,0.18)';
+          diagCtx.strokeStyle = '#38bdf8';
+          diagCtx.lineWidth = 1.2;
+          diagCtx.beginPath();
+          const bSize = state.bladder === 'full' ? 14 : 6;
+          diagCtx.ellipse(54, 34, bSize * 1.15, bSize * 0.72, -0.2, 0, Math.PI * 2);
+          diagCtx.fill();
+          diagCtx.stroke();
+
+          // Reto (posterior)
+          diagCtx.fillStyle = 'rgba(148,163,184,0.22)';
+          diagCtx.strokeStyle = '#64748b';
+          diagCtx.beginPath();
+          diagCtx.ellipse(120, 56, 12, 22, 0.25, 0, Math.PI * 2);
+          diagCtx.fill();
+          diagCtx.stroke();
+
+          // Útero (AVF inclina p/ frente sobre a bexiga; RVF inclina p/ trás sobre o reto)
+          diagCtx.save();
+          diagCtx.translate(86, 54);
+          diagCtx.rotate(isRVF ? 0.85 : -0.65);
+          diagCtx.fillStyle = 'rgba(167,139,250,0.45)';
+          diagCtx.strokeStyle = '#a78bfa';
+          diagCtx.lineWidth = 1.4;
+          diagCtx.beginPath();
+          diagCtx.ellipse(0, -10, 9, 16, 0, 0, Math.PI * 2);
+          diagCtx.fill();
+          diagCtx.stroke();
+          // Endométrio esquemático
+          diagCtx.strokeStyle = '#f472b6';
+          diagCtx.lineWidth = 1.6;
+          diagCtx.beginPath();
+          diagCtx.moveTo(0, -20);
+          diagCtx.lineTo(0, 6);
+          diagCtx.stroke();
+          diagCtx.restore();
+
+          // Transdutor e Feixe Sincronizado
+          diagCtx.save();
+          if (!isTV) {
+            // Sonda Suprapúbica sobre a parede abdominal
+            const px = 66 + sweepNorm * 12;
+            const py = 15;
+            diagCtx.translate(px, py);
+            diagCtx.rotate(-tiltRad * 0.55);
+            // Feixe
+            diagCtx.fillStyle = 'rgba(6,182,212,0.20)';
+            diagCtx.strokeStyle = 'rgba(34,211,238,0.75)';
+            diagCtx.lineWidth = 1;
+            diagCtx.beginPath();
+            diagCtx.moveTo(-7, 2);
+            diagCtx.lineTo(-34, 68);
+            diagCtx.lineTo(34, 68);
+            diagCtx.lineTo(7, 2);
+            diagCtx.closePath();
+            diagCtx.fill();
+            diagCtx.stroke();
+            // Sonda
+            diagCtx.fillStyle = '#06b6d4';
+            roundRect(diagCtx, -9, -5, 18, 8, 3);
+            diagCtx.fill();
+          } else {
+            // Sonda Endocavitária (Transvaginal) entrando inferiormente
+            const px = 76;
+            const py = 78;
+            diagCtx.translate(px, py);
+            diagCtx.rotate(-0.45 + tiltRad * 0.6);
+            // Feixe amplo
+            diagCtx.fillStyle = 'rgba(16,185,129,0.22)';
+            diagCtx.strokeStyle = 'rgba(52,211,153,0.8)';
+            diagCtx.lineWidth = 1;
+            diagCtx.beginPath();
+            diagCtx.moveTo(0, -14);
+            diagCtx.lineTo(-36, -64);
+            diagCtx.lineTo(36, -64);
+            diagCtx.closePath();
+            diagCtx.fill();
+            diagCtx.stroke();
+            // Haste da sonda TV
+            diagCtx.fillStyle = '#10b981';
+            roundRect(diagCtx, -3.5, -16, 7, 24, 3);
+            diagCtx.fill();
+          }
+          diagCtx.restore();
+
+          // Indicador de deslocamento lateral (L / M / R) na base
+          diagCtx.fillStyle = 'rgba(148,163,184,0.65)';
+          diagCtx.font = '8px "JetBrains Mono", monospace';
+          diagCtx.fillText('ANT', 6, 86);
+          diagCtx.fillText('POST', 132, 86);
+        } else {
+          // --- VISTA CORONAL/FRONTAL DA PELVE (MOSTRANDO PLANO DE CORTE AXIAL) ---
+          // Útero central
+          diagCtx.fillStyle = 'rgba(167,139,250,0.38)';
+          diagCtx.strokeStyle = '#a78bfa';
+          diagCtx.lineWidth = 1.4;
+          diagCtx.beginPath();
+          diagCtx.moveTo(80, 74);
+          diagCtx.quadraticCurveTo(64, 52, 62, 34);
+          diagCtx.quadraticCurveTo(80, 22, 98, 34);
+          diagCtx.quadraticCurveTo(96, 52, 80, 74);
+          diagCtx.closePath();
+          diagCtx.fill();
+          diagCtx.stroke();
+
+          // Tubas e Ovários bilaterais
+          diagCtx.strokeStyle = 'rgba(167,139,250,0.55)';
+          diagCtx.beginPath();
+          diagCtx.moveTo(64, 34);
+          diagCtx.quadraticCurveTo(46, 28, 34, 42);
+          diagCtx.moveTo(96, 34);
+          diagCtx.quadraticCurveTo(114, 28, 126, 42);
+          diagCtx.stroke();
+
+          // Ovário Direito (à esquerda na convenção anatômica frontal) e Esquerdo
+          [34, 126].forEach((ox, idx) => {
+            diagCtx.fillStyle = idx === 0 ? 'rgba(250,204,21,0.45)' : 'rgba(250,204,21,0.28)';
+            diagCtx.strokeStyle = '#facc15';
+            diagCtx.lineWidth = 1.2;
+            diagCtx.beginPath();
+            diagCtx.ellipse(ox, 44, 11, 7, 0, 0, Math.PI * 2);
+            diagCtx.fill();
+            diagCtx.stroke();
+          });
+
+          // Linha do plano de corte transversal movendo-se de caudal (y=72) a cranial (y=24) com sweep
+          const cutY = lerp(70, 26, (sweepNorm + 1) / 2);
+          diagCtx.save();
+          diagCtx.translate(80, cutY);
+          diagCtx.rotate(tiltRad * 0.28);
+          diagCtx.strokeStyle = isTV ? '#10b981' : '#06b6d4';
+          diagCtx.lineWidth = 2;
+          diagCtx.setLineDash([4, 2]);
+          diagCtx.beginPath();
+          diagCtx.moveTo(-66, 0);
+          diagCtx.lineTo(66, 0);
+          diagCtx.stroke();
+          diagCtx.setLineDash([]);
+          diagCtx.restore();
+
+          diagCtx.fillStyle = 'rgba(148,163,184,0.7)';
+          diagCtx.font = '8px "JetBrains Mono", monospace';
+          diagCtx.fillText('OD', 26, 62);
+          diagCtx.fillText('OE', 122, 62);
+        }
+      }
+
+      // =========================================================================
+      // 11. LOOP PRINCIPAL DE ANIMAÇÃO E REDIMENSIONAMENTO RESPONSIVO
+      // =========================================================================
+      function resizeCanvas() {
+        try {
+          const rect = dom.monitorWrapper.getBoundingClientRect();
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const w = Math.max(300, Math.floor(rect.width));
+          const h = Math.max(320, Math.floor(rect.height));
+
+          if (dom.usgCanvas.width !== Math.floor(w * dpr) || dom.usgCanvas.height !== Math.floor(h * dpr)) {
+            dom.usgCanvas.width = Math.floor(w * dpr);
+            dom.usgCanvas.height = Math.floor(h * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            freezeBuffer.width = dom.usgCanvas.width;
+            freezeBuffer.height = dom.usgCanvas.height;
+            freezeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            hasFrozenFrame = false;
+          }
+          updateBeamGeometry(w, h);
+        } catch (err) {
+          console.error('Erro ao redimensionar canvas:', err);
+        }
+      }
+
+      function stepProbeAnimation() {
+        if (!state.animTarget) return;
+        let done = true;
+        const speed = 0.16;
+
+        ['sweep', 'tilt'].forEach(key => {
+          if (typeof state.animTarget[key] === 'number') {
+            const diff = state.animTarget[key] - state[key];
+            if (Math.abs(diff) > 0.4) {
+              state[key] += diff * speed;
+              done = false;
+            } else {
+              state[key] = state.animTarget[key];
+            }
+          }
+        });
+
+        // Sincroniza sliders visuais durante a animação
+        dom.sliderSweep.value = Math.round(state.sweep);
+        dom.sliderTilt.value = Math.round(state.tilt);
+        updateSweepTiltLabels();
+
+        if (done) {
+          state.animTarget = null;
+        }
+      }
+
+      function animate(now) {
+        try {
+          const dt = Math.min(0.05, (now - lastTime) / 1000);
+          lastTime = now;
+
+          // Calcula FPS suavizado
+          frameCount++;
+          if (frameCount >= 20) {
+            fpsDisplay = Math.round(1 / Math.max(0.008, dt));
+            dom.hudFps.textContent = clamp(fpsDisplay, 24, 60);
+            frameCount = 0;
+          }
+
+          stepProbeAnimation();
+          resizeCanvas();
+
+          if (!state.frozen) {
+            simTime += dt;
+            renderUltrasoundScene(ctx, simTime);
+            // Guarda cópia para caso o usuário clique Freeze
+            freezeCtx.save();
+            freezeCtx.setTransform(1, 0, 0, 1, 0, 0);
+            freezeCtx.drawImage(dom.usgCanvas, 0, 0);
+            freezeCtx.restore();
+            hasFrozenFrame = true;
+          } else if (hasFrozenFrame) {
+            // Reexibe exatamente o frame congelado (mantendo interatividade de paquímetro e gabarito!)
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.drawImage(freezeBuffer, 0, 0);
+            ctx.restore();
+          } else {
+            renderUltrasoundScene(ctx, simTime);
+          }
+
+          renderMonitorOverlays(ctx);
+          renderMiniDiagram();
+        } catch (err) {
+          console.error('Erro no loop de renderização:', err);
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      // =========================================================================
+      // 12. INTERAÇÃO DIRETA NO CANVAS (ARRASTAR SONDA, PAQUÍMETRO, CLIQUE ATLAS/QUIZ)
+      // =========================================================================
+      const pointerPos = { x: 0, y: 0, inside: false };
+      let dragState = {
+        active: false,
+        moved: false,
+        startX: 0,
+        startY: 0,
+        startSweep: 0,
+        startTilt: 0
+      };
+
+      function getCanvasPoint(e) {
+        const rect = dom.usgCanvas.getBoundingClientRect();
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+
+      // Retorna o ID da estrutura mais superficial sob (px, py)
+      function hitTestStructures(px, py) {
+        for (let i = renderedShapes.length - 1; i >= 0; i--) {
+          if (renderedShapes[i].hitTest(px, py)) {
+            return renderedShapes[i].id;
+          }
+        }
+        return null;
+      }
+
+      dom.usgCanvas.addEventListener('pointerdown', (e) => {
+        const pt = getCanvasPoint(e);
+        pointerPos.x = pt.x;
+        pointerPos.y = pt.y;
+        pointerPos.inside = true;
+
+        // Modo Paquímetro: marca ponto 1 ou fecha medição no ponto 2
+        if (state.caliperMode) {
+          const cmPt = pxToCm(pt.x, pt.y);
+          if (!state.pendingPoint) {
+            state.pendingPoint = cmPt;
+            showToast('1º ponto marcado — clique no 2º ponto para medir', 2000);
+          } else {
+            const distMm = Math.hypot(cmPt.xCm - state.pendingPoint.xCm, cmPt.yCm - state.pendingPoint.yCm) * 10;
+            if (distMm >= 0.8) {
+              state.measurements.push({ p1: state.pendingPoint, p2: cmPt });
+              showToast(`Medição registrada: ${distMm.toFixed(1)} mm (${(distMm / 10).toFixed(2)} cm)`);
+            }
+            state.pendingPoint = null;
+            syncUI();
+          }
+          return;
+        }
+
+        // Inicia possível arrasto para mover o transdutor
+        dragState = {
+          active: true,
+          moved: false,
+          startX: pt.x,
+          startY: pt.y,
+          startSweep: state.sweep,
+          startTilt: state.tilt
+        };
+        try {
+          dom.usgCanvas.setPointerCapture(e.pointerId);
+        } catch (_) {}
+      });
+
+      dom.usgCanvas.addEventListener('pointermove', (e) => {
+        const pt = getCanvasPoint(e);
+        pointerPos.x = pt.x;
+        pointerPos.y = pt.y;
+        pointerPos.inside = true;
+
+        if (dragState.active && !state.frozen) {
+          const dx = pt.x - dragState.startX;
+          const dy = pt.y - dragState.startY;
+          if (Math.hypot(dx, dy) > 6) {
+            dragState.moved = true;
+            state.animTarget = null;
+            state.sweep = clamp(Math.round(dragState.startSweep + dx * 0.45), -100, 100);
+            state.tilt = clamp(Math.round(dragState.startTilt - dy * 0.25), -40, 40);
+            dom.sliderSweep.value = state.sweep;
+            dom.sliderTilt.value = state.tilt;
+            updateSweepTiltLabels();
+            updateClinicalContext();
+          }
+        } else if (!state.caliperMode) {
+          state.hoverStructure = hitTestStructures(pt.x, pt.y);
+        }
+      });
+
+      dom.usgCanvas.addEventListener('pointerup', (e) => {
+        const pt = getCanvasPoint(e);
+        if (dragState.active) {
+          const wasClick = !dragState.moved;
+          dragState.active = false;
+          try {
+            dom.usgCanvas.releasePointerCapture(e.pointerId);
+          } catch (_) {}
+
+          if (wasClick) {
+            handleMonitorClick(pt.x, pt.y);
+          }
+        }
+      });
+
+      dom.usgCanvas.addEventListener('pointerleave', () => {
+        pointerPos.inside = false;
+        state.hoverStructure = null;
+      });
+
+      function handleMonitorClick(px, py) {
+        const hitId = hitTestStructures(px, py);
+
+        // 1) Se estiver no Modo Desafio e a questão for de clique na imagem:
+        if (state.activeTab === 'quiz') {
+          const q = QUIZ_CASES[state.quizIndex];
+          if (q && q.type === 'click' && !state.quizAnswered) {
+            evaluateQuizAnswer(hitId);
+          }
+          return;
+        }
+
+        // 2) No modo Estudo Livre (Aba Transdutor ou Atlas), clicar na estrutura abre o cartão dela no Atlas!
+        if (hitId && ANATOMY_DB[hitId]) {
+          state.selectedStructure = hitId;
+          setActiveTab('atlas');
+          renderAtlasPanel();
+          showToast(`Estrutura identificada: ${ANATOMY_DB[hitId].name}`);
+        } else {
+          showToast('Clique sobre uma estrutura anatômica pélvica para inspecionar', 1800);
+        }
+      }
+
+      // =========================================================================
+      // 13. GESTÃO DE ABAS, CONTROLES E CORRELAÇÃO CLÍNICA
+      // =========================================================================
+      function setActiveTab(tab) {
+        state.activeTab = tab;
+
+        const tabs = [
+          { id: 'controls', btn: dom.tabBtnControls, panel: dom.panelControls },
+          { id: 'atlas',    btn: dom.tabBtnAtlas,    panel: dom.panelAtlas },
+          { id: 'quiz',     btn: dom.tabBtnQuiz,     panel: dom.panelQuiz }
+        ];
+
+        tabs.forEach(t => {
+          const active = t.id === tab;
+          t.panel.classList.toggle('hidden', !active);
+          if (active) {
+            t.btn.className = 'tab-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 flex items-center justify-center gap-1';
+            t.btn.setAttribute('aria-selected', 'true');
+          } else {
+            t.btn.className = 'tab-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-slate-200 border border-transparent flex items-center justify-center gap-1';
+            t.btn.setAttribute('aria-selected', 'false');
+          }
+        });
+
+        // Indicador de Modo no cabeçalho
+        if (tab === 'quiz') {
+          dom.modeBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-medium';
+          dom.modeBadgeDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+          dom.modeBadgeText.textContent = 'Modo Desafio';
+          // Desativa gabarito automaticamente no Modo Desafio
+          state.overlay = false;
+          state.caliperMode = false;
+          state.pendingPoint = null;
+          loadQuizCase(state.quizIndex, false);
+        } else {
+          dom.modeBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium';
+          dom.modeBadgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          dom.modeBadgeText.textContent = 'Estudo Livre';
+          state.quizHighlightStructure = null;
+        }
+
+        if (tab === 'atlas') {
+          renderAtlasPanel();
+        }
+        syncUI();
+      }
+
+      // Configura limites de profundidade e frequência quando troca a via (TA vs TV)
+      function applyRoute(route, preserveDefaults = false) {
+        state.route = route;
+        if (route === 'TA') {
+          dom.sliderDepth.min = 8;
+          dom.sliderDepth.max = 18;
+          dom.sliderFreq.min = 3.0;
+          dom.sliderFreq.max = 5.0;
+          if (!preserveDefaults) {
+            state.depth = 14.0;
+            state.freq = 4.0;
+          } else {
+            state.depth = clamp(state.depth, 8, 18);
+            state.freq = clamp(state.freq, 3.0, 5.0);
+          }
+        } else {
+          dom.sliderDepth.min = 5;
+          dom.sliderDepth.max = 12;
+          dom.sliderFreq.min = 5.0;
+          dom.sliderFreq.max = 9.0;
+          if (!preserveDefaults) {
+            state.depth = 8.0;
+            state.freq = 7.5;
+          } else {
+            state.depth = clamp(state.depth, 5, 12);
+            state.freq = clamp(state.freq, 5.0, 9.0);
+          }
+        }
+        hasFrozenFrame = false;
+        syncUI();
+      }
+
+      function updateSweepTiltLabels() {
+        const s = Math.round(state.sweep);
+        if (state.plane === 'sagittal') {
+          dom.labelSweepTitle.textContent = 'Varredura Látero-Lateral';
+          dom.sweepAxisTicks.innerHTML = '<span>← Ovário Esq.</span><span>Linha Média</span><span>Ovário Dir. →</span>';
+          if (Math.abs(s) <= 12) dom.valSweep.textContent = `Linha Média (${s})`;
+          else if (s < 0) dom.valSweep.textContent = `Esquerda (${s})`;
+          else dom.valSweep.textContent = `Direita (+${s})`;
+        } else {
+          dom.labelSweepTitle.textContent = 'Varredura Crânio-Caudal';
+          dom.sweepAxisTicks.innerHTML = '<span>← Colo / Caudal</span><span>Corpo</span><span>Fundo / Anexos →</span>';
+          if (s < -35) dom.valSweep.textContent = `Colo Uterino (${s})`;
+          else if (s > 35) dom.valSweep.textContent = `Fundo/Anexos (+${s})`;
+          else dom.valSweep.textContent = `Corpo Uterino (${s > 0 ? '+' + s : s})`;
+        }
+        dom.valTilt.textContent = `${Math.round(state.tilt)}°`;
+      }
+
+      function updateClinicalContext() {
+        const notes = [];
+        if (state.route === 'TA' && state.bladder === 'empty') {
+          notes.push('⚠️ Janela acústica prejudicada: na via suprapúbica, a bexiga vazia permite interposição de gás intestinal, gerando reverberação e sombra suja. Encha a bexiga ou mude para USTV!');
+        } else if (state.route === 'TV') {
+          notes.push('USTV (alta frequência) oferece resolução superior de campo próximo para detalhar o endométrio, folículos e Fundo de Saco de Douglas.');
+        } else {
+          notes.push('Via Suprapúbica com bexiga cheia: observe o reforço acústico posterior brilhante projetado atrás da bexiga anecoica.');
+        }
+
+        if (state.cyclePhase === 'proliferative') {
+          notes.push('Fase Proliferativa Inicial: endométrio fino (~4 mm) e pequenos folículos antrais.');
+        } else if (state.cyclePhase === 'periovulatory') {
+          notes.push('Fase Periovulatória: endométrio trilaminar (~10 mm), folículo dominante no ovário direito (~19 mm) e discreta lâmina de líquido em Douglas.');
+        } else {
+          notes.push('Fase Secretora: endométrio espessado hiperecoico (~13.5 mm) e corpo lúteo no ovário direito (ative o Doppler e varra à direita para ver o "anel de fogo"!).');
+        }
+
+        if (state.uterinePos === 'RVF') {
+          notes.push('Útero em RVF (Retroversoflexão): fundo dobrado posteriormente em direção ao reto.');
+        }
+
+        dom.clinicalContextText.textContent = notes.join(' ');
+      }
+
+      function setSegmentedStyle(btn, active, accent = 'cyan') {
+        const colors = accent === 'emerald'
+          ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-200'
+          : 'bg-cyan-500/20 border-cyan-400/60 text-cyan-200';
+        const inactive = 'bg-console-panel border-console-border text-slate-400 hover:text-slate-200';
+        btn.className = btn.className
+          .replace(/bg-[^\s]+|border-[^\s]+|text-[^\s]+|hover:text-[^\s]+/g, '')
+          .trim() + ' ' + (active ? colors : inactive);
+      }
+
+      function syncUI() {
+        // HUD
+        dom.hudRoute.textContent = state.route === 'TA' ? 'SUPRAPÚBICA (TA)' : 'TRANSVAGINAL (USTV)';
+        dom.hudPlane.textContent = state.plane === 'sagittal' ? 'SAGITAL' : 'TRANSVERSAL';
+        dom.hudFreq.textContent = `${state.freq.toFixed(1)} MHz`;
+        dom.hudDepth.textContent = `D: ${state.depth.toFixed(1)} cm`;
+        dom.hudGain.textContent = `G: ${state.gain}%`;
+
+        dom.hudDopplerTag.classList.toggle('hidden', !state.doppler);
+        dom.hudCaliperTag.classList.toggle('hidden', !state.caliperMode);
+
+        if (state.frozen) {
+          dom.hudStatusPill.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-sky-500/20 border border-sky-400/50 text-sky-200 font-bold text-[10px]';
+          dom.hudStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-sky-300';
+          dom.hudStatusText.textContent = 'FROZEN';
+          dom.hudFps.classList.add('hidden');
+        } else {
+          dom.hudStatusPill.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-[10px]';
+          dom.hudStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 dot-live';
+          dom.hudStatusText.textContent = 'LIVE';
+          dom.hudFps.classList.remove('hidden');
+        }
+
+        // Sliders Knobology
+        dom.sliderGain.value = state.gain;
+        dom.valGain.textContent = `${state.gain}%`;
+        dom.sliderDepth.value = state.depth;
+        dom.valDepth.textContent = `${state.depth.toFixed(1)} cm`;
+        dom.sliderFreq.value = state.freq;
+        dom.valFreq.textContent = `${state.freq.toFixed(1)} MHz`;
+
+        dom.sliderSweep.value = Math.round(state.sweep);
+        dom.sliderTilt.value = Math.round(state.tilt);
+        updateSweepTiltLabels();
+
+        // Botões Knobology
+        const toggleBtn = (btn, on, activeClasses) => {
+          btn.className = `inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] ${
+            on ? activeClasses : 'bg-console-card border-console-border text-slate-200 hover:bg-console-hover'
+          }`;
+        };
+
+        toggleBtn(dom.btnFreeze, state.frozen, 'bg-sky-500/25 border-sky-400 text-sky-200 shadow-sm shadow-sky-500/20');
+        toggleBtn(dom.btnDoppler, state.doppler, 'bg-rose-500/20 border-rose-400/70 text-rose-200 shadow-sm shadow-rose-500/20');
+        toggleBtn(dom.btnCaliper, state.caliperMode, 'bg-amber-500/20 border-amber-400/70 text-amber-200 shadow-sm shadow-amber-500/20');
+        toggleBtn(dom.btnOverlay, state.overlay, 'bg-emerald-500/20 border-emerald-400/70 text-emerald-200 shadow-sm shadow-emerald-500/20');
+        dom.btnOverlay.disabled = state.activeTab === 'quiz';
+        dom.btnOverlay.classList.toggle('opacity-40', state.activeTab === 'quiz');
+
+        dom.btnClearMeasure.classList.toggle('hidden', state.measurements.length === 0 && !state.pendingPoint);
+
+        // Cursor e dica do monitor
+        dom.usgCanvas.classList.toggle('usg-canvas-crosshair', state.caliperMode || state.activeTab === 'quiz');
+        dom.usgCanvas.classList.toggle('usg-canvas-grab', !state.caliperMode && state.activeTab !== 'quiz');
+
+        if (state.caliperMode) {
+          dom.monitorHintText.textContent = 'Modo Paquímetro ativo: clique em dois pontos para medir distância real (mm/cm)';
+        } else if (state.activeTab === 'quiz') {
+          dom.monitorHintText.textContent = 'Modo Desafio: clique na estrutura pedida ou responda no painel à direita';
+        } else if (state.frozen) {
+          dom.monitorHintText.textContent = 'Imagem CONGELADA (Freeze) — você pode medir com Paquímetro ou ativar o Gabarito';
+        } else {
+          dom.monitorHintText.textContent = 'Arraste na imagem para varrer/angular • Clique em uma estrutura para abrir no Atlas';
+        }
+
+        // Controles da Aba 1
+        setSegmentedStyle(dom.btnRouteTA, state.route === 'TA', 'cyan');
+        setSegmentedStyle(dom.btnRouteTV, state.route === 'TV', 'cyan');
+        setSegmentedStyle(dom.btnPlaneSag, state.plane === 'sagittal', 'emerald');
+        setSegmentedStyle(dom.btnPlaneTrans, state.plane === 'transverse', 'emerald');
+
+        setSegmentedStyle(dom.btnPhaseProlif, state.cyclePhase === 'proliferative', 'cyan');
+        setSegmentedStyle(dom.btnPhasePeriov, state.cyclePhase === 'periovulatory', 'cyan');
+        setSegmentedStyle(dom.btnPhaseSecret, state.cyclePhase === 'secretory', 'cyan');
+
+        setSegmentedStyle(dom.btnPosAVF, state.uterinePos === 'AVF', 'emerald');
+        setSegmentedStyle(dom.btnPosRVF, state.uterinePos === 'RVF', 'emerald');
+
+        setSegmentedStyle(dom.btnBladderFull, state.bladder === 'full', 'cyan');
+        setSegmentedStyle(dom.btnBladderEmpty, state.bladder === 'empty', 'cyan');
+
+        updateClinicalContext();
+      }
+
+      // =========================================================================
+      // 14. RENDERIZAÇÃO DA ABA 2: ATLAS ANATÔMICO
+      // =========================================================================
+      function renderAtlasPanel() {
+        dom.atlasList.innerHTML = '';
+
+        ANATOMY_ORDER.forEach(id => {
+          const item = ANATOMY_DB[id];
+          const isSel = state.selectedStructure === id;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left text-xs font-medium transition-all ${
+            isSel
+              ? 'bg-cyan-500/15 border-cyan-400/60 text-white shadow-sm'
+              : 'bg-console-card border-console-border text-slate-300 hover:bg-console-hover'
+          }`;
+          btn.innerHTML = `
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${item.color}"></span>
+            <span class="truncate">${item.shortName}</span>
+          `;
+          btn.addEventListener('click', () => {
+            state.selectedStructure = id;
+            renderAtlasPanel();
+          });
+          dom.atlasList.appendChild(btn);
+        });
+
+        // Cartão didático da estrutura selecionada
+        const s = ANATOMY_DB[state.selectedStructure] || ANATOMY_DB.endometrium;
+        dom.atlasDetailCard.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full shrink-0" style="background:${s.color}"></span>
+                <h3 class="text-sm font-bold text-white">${s.name}</h3>
+              </div>
+              <span class="inline-block mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono border ${s.echoBadgeColor}">
+                ${s.echogenicity}
+              </span>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs text-slate-300 leading-relaxed pt-1">
+            <div class="bg-console-panel/80 rounded-lg p-2.5 border border-console-border/70">
+              <span class="block text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-semibold mb-0.5">Pontos de Referência (Landmarks)</span>
+              <p>${s.landmarks}</p>
+            </div>
+            <div class="bg-console-panel/80 rounded-lg p-2.5 border border-console-border/70">
+              <span class="block text-[10px] font-mono uppercase tracking-wider text-amber-400 font-semibold mb-0.5">Artefatos Acústicos</span>
+              <p>${s.artifacts}</p>
+            </div>
+            <div class="bg-console-panel/80 rounded-lg p-2.5 border border-console-border/70">
+              <span class="block text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold mb-0.5">Relevância Clínica &amp; Morfofisiológica</span>
+              <p>${s.relevance}</p>
+            </div>
+          </div>
+
+          <button id="btnGoBestView" type="button"
+            class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-bold text-xs transition-all active:scale-[0.98] shadow-md">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+            </svg>
+            <span>Ir para melhor plano anatômico</span>
+          </button>
+        `;
+
+        document.getElementById('btnGoBestView').addEventListener('click', () => {
+          navigateToView(s.bestView);
+          showToast(`Sonda ajustada para visualização ideal: ${s.shortName}`);
+        });
+      }
+
+      // Move suavemente o transdutor para o plano recomendado
+      function navigateToView(cfg) {
+        if (!cfg) return;
+        state.frozen = false;
+        if (cfg.route) applyRoute(cfg.route, false);
+        if (cfg.plane) state.plane = cfg.plane;
+        if (cfg.cyclePhase) state.cyclePhase = cfg.cyclePhase;
+        if (cfg.uterinePos) state.uterinePos = cfg.uterinePos;
+        if (cfg.bladder) state.bladder = cfg.bladder;
+        if (typeof cfg.doppler === 'boolean') state.doppler = cfg.doppler;
+
+        state.animTarget = {
+          sweep: typeof cfg.sweep === 'number' ? cfg.sweep : 0,
+          tilt: typeof cfg.tilt === 'number' ? cfg.tilt : 0
+        };
+        syncUI();
+      }
+
+      // =========================================================================
+      // 15. LÓGICA DO MODO DESAFIO (QUIZ PRÁTICO INTERATIVO)
+      // =========================================================================
+      function loadQuizCase(index, resetProgress = false) {
+        if (resetProgress) {
+          state.quizIndex = 0;
+          state.quizScore = 0;
+          state.quizStreak = 0;
+        } else {
+          state.quizIndex = index % QUIZ_CASES.length;
+        }
+
+        const q = QUIZ_CASES[state.quizIndex];
+        state.quizAnswered = false;
+        state.quizHighlightStructure = null;
+        state.overlay = false;
+        state.frozen = false;
+
+        // Aplica o corte clínico do caso com animação suave
+        navigateToView(q.setup);
+
+        // Atualiza UI do Quiz
+        dom.quizScore.textContent = state.quizScore;
+        dom.quizStreak.textContent = `${state.quizStreak} 🔥`;
+        dom.quizProgressText.textContent = `${state.quizIndex + 1} / ${QUIZ_CASES.length}`;
+        dom.quizProgressBar.style.width = `${((state.quizIndex + 1) / QUIZ_CASES.length) * 100}%`;
+
+        dom.quizTypeBadge.textContent = q.badge;
+        dom.quizPrompt.textContent = q.prompt;
+        dom.quizSubHint.textContent = q.hint;
+
+        dom.quizFeedbackBox.classList.add('hidden');
+        dom.btnQuizNext.classList.add('hidden');
+
+        if (q.type === 'mcq') {
+          dom.quizOptionsContainer.classList.remove('hidden');
+          dom.quizOptionsContainer.innerHTML = '';
+          q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.value = opt.value;
+            btn.className = 'quiz-opt-btn w-full text-left px-3 py-2.5 rounded-xl bg-console-panel hover:bg-console-hover border border-console-border text-xs font-medium text-slate-200 transition-all';
+            btn.textContent = opt.label;
+            btn.addEventListener('click', () => {
+              if (!state.quizAnswered) {
+                evaluateQuizAnswer(opt.value);
+              }
+            });
+            dom.quizOptionsContainer.appendChild(btn);
+          });
+        } else {
+          dom.quizOptionsContainer.classList.add('hidden');
+          dom.quizOptionsContainer.innerHTML = '';
+        }
+      }
+
+      function evaluateQuizAnswer(answerVal) {
+        const q = QUIZ_CASES[state.quizIndex];
+        if (!q || state.quizAnswered) return;
+
+        state.quizAnswered = true;
+        let isCorrect = false;
+
+        if (q.type === 'click') {
+          isCorrect = answerVal === q.targetStructure;
+          state.quizHighlightStructure = q.targetStructure;
+        } else {
+          isCorrect = answerVal === q.correctValue;
+          state.quizHighlightStructure = q.highlightAfter || null;
+
+          // Estiliza opções de múltipla escolha
+          dom.quizOptionsContainer.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+            const v = btn.dataset.value;
+            btn.disabled = true;
+            if (v === q.correctValue) {
+              btn.className = 'quiz-opt-btn w-full text-left px-3 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-400 text-xs font-semibold text-emerald-200';
+            } else if (v === answerVal && !isCorrect) {
+              btn.className = 'quiz-opt-btn w-full text-left px-3 py-2.5 rounded-xl bg-rose-500/20 border border-rose-400 text-xs font-semibold text-rose-200';
+            } else {
+              btn.className = 'quiz-opt-btn w-full text-left px-3 py-2.5 rounded-xl bg-console-panel/40 border border-console-border/50 text-xs text-slate-500';
+            }
+          });
+        }
+
+        if (isCorrect) {
+          state.quizScore += 100 + state.quizStreak * 20;
+          state.quizStreak += 1;
+          dom.quizFeedbackBox.className = 'rounded-xl p-3 text-xs leading-relaxed border bg-emerald-950/50 border-emerald-500/45 text-emerald-100';
+          dom.quizFeedbackBox.innerHTML = `<strong class="text-emerald-300 block mb-1">✓ Resposta Correta! (+${100 + (state.quizStreak - 1) * 20} pts)</strong>${q.explanation}`;
+          showToast('Excelente! Estrutura confirmada no monitor.');
+        } else {
+          state.quizStreak = 0;
+          const clickedLabel = (q.type === 'click' && answerVal && ANATOMY_DB[answerVal])
+            ? `Você clicou em: ${ANATOMY_DB[answerVal].name}. `
+            : (q.type === 'click' ? 'Clique fora da estrutura-alvo. ' : '');
+          dom.quizFeedbackBox.className = 'rounded-xl p-3 text-xs leading-relaxed border bg-rose-950/50 border-rose-500/45 text-rose-100';
+          dom.quizFeedbackBox.innerHTML = `<strong class="text-rose-300 block mb-1">✕ Quase lá! Veja o destaque no monitor.</strong>${clickedLabel}${q.explanation}`;
+          showToast('Confira a estrutura destacada no monitor.');
+        }
+
+        dom.quizScore.textContent = state.quizScore;
+        dom.quizStreak.textContent = `${state.quizStreak} 🔥`;
+        dom.quizFeedbackBox.classList.remove('hidden');
+
+        const isLast = state.quizIndex === QUIZ_CASES.length - 1;
+        dom.btnQuizNext.querySelector('span').textContent = isLast ? 'Concluir e Recomeçar' : 'Próximo Caso';
+        dom.btnQuizNext.classList.remove('hidden');
+      }
+
+      // =========================================================================
+      // 16. EVENT LISTENERS DOS CONTROLES
+      // =========================================================================
+      // Abas
+      dom.tabBtnControls.addEventListener('click', () => setActiveTab('controls'));
+      dom.tabBtnAtlas.addEventListener('click', () => setActiveTab('atlas'));
+      dom.tabBtnQuiz.addEventListener('click', () => setActiveTab('quiz'));
+
+      // Reset Geral
+      dom.btnResetAll.addEventListener('click', () => {
+        Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)));
+        applyRoute('TA', false);
+        setActiveTab('controls');
+        renderAtlasPanel();
+        showToast('Console restaurado para os padrões de fábrica.');
+      });
+
+      // Knobology Sliders
+      dom.sliderGain.addEventListener('input', (e) => {
+        state.gain = Number(e.target.value);
+        syncUI();
+      });
+      dom.sliderDepth.addEventListener('input', (e) => {
+        state.depth = Number(e.target.value);
+        hasFrozenFrame = false;
+        syncUI();
+      });
+      dom.sliderFreq.addEventListener('input', (e) => {
+        state.freq = Number(e.target.value);
+        syncUI();
+      });
+
+      // Knobology Buttons
+      dom.btnFreeze.addEventListener('click', () => {
+        state.frozen = !state.frozen;
+        syncUI();
+        showToast(state.frozen ? 'Imagem congelada (FREEZE)' : 'Imagem ao vivo retomada (LIVE)');
+      });
+
+      dom.btnDoppler.addEventListener('click', () => {
+        state.doppler = !state.doppler;
+        if (state.frozen) hasFrozenFrame = false;
+        syncUI();
+        showToast(state.doppler ? 'Doppler Colorido (CFM) ativado' : 'Doppler Colorido desativado');
+      });
+
+      dom.btnCaliper.addEventListener('click', () => {
+        state.caliperMode = !state.caliperMode;
+        state.pendingPoint = null;
+        syncUI();
+        if (state.caliperMode) {
+          showToast('Paquímetro ativo: clique em 2 pontos no monitor para medir');
+        }
+      });
+
+      dom.btnClearMeasure.addEventListener('click', () => {
+        state.measurements = [];
+        state.pendingPoint = null;
+        syncUI();
+        showToast('Medições removidas');
+      });
+
+      dom.btnOverlay.addEventListener('click', () => {
+        if (state.activeTab === 'quiz') return;
+        state.overlay = !state.overlay;
+        syncUI();
+      });
+
+      // Aba 1: Transdutor & Cenário
+      dom.btnRouteTA.addEventListener('click', () => applyRoute('TA', false));
+      dom.btnRouteTV.addEventListener('click', () => applyRoute('TV', false));
+
+      dom.btnPlaneSag.addEventListener('click', () => {
+        state.plane = 'sagittal';
+        syncUI();
+      });
+      dom.btnPlaneTrans.addEventListener('click', () => {
+        state.plane = 'transverse';
+        syncUI();
+      });
+
+      dom.sliderSweep.addEventListener('input', (e) => {
+        state.animTarget = null;
+        state.sweep = Number(e.target.value);
+        updateSweepTiltLabels();
+        updateClinicalContext();
+      });
+      dom.sliderTilt.addEventListener('input', (e) => {
+        state.animTarget = null;
+        state.tilt = Number(e.target.value);
+        updateSweepTiltLabels();
+      });
+      dom.btnCenterProbe.addEventListener('click', () => {
+        state.animTarget = { sweep: 0, tilt: 0 };
+      });
+
+      dom.btnPhaseProlif.addEventListener('click', () => { state.cyclePhase = 'proliferative'; syncUI(); });
+      dom.btnPhasePeriov.addEventListener('click', () => { state.cyclePhase = 'periovulatory'; syncUI(); });
+      dom.btnPhaseSecret.addEventListener('click', () => { state.cyclePhase = 'secretory'; syncUI(); });
+
+      dom.btnPosAVF.addEventListener('click', () => { state.uterinePos = 'AVF'; syncUI(); });
+      dom.btnPosRVF.addEventListener('click', () => { state.uterinePos = 'RVF'; syncUI(); });
+
+      dom.btnBladderFull.addEventListener('click', () => { state.bladder = 'full'; syncUI(); });
+      dom.btnBladderEmpty.addEventListener('click', () => { state.bladder = 'empty'; syncUI(); });
+
+      // Aba 3: Quiz Buttons
+      dom.btnQuizNext.addEventListener('click', () => {
+        if (state.quizIndex === QUIZ_CASES.length - 1) {
+          showToast(`Desafio concluído! Pontuação final: ${state.quizScore} pts`, 3200);
+          loadQuizCase(0, true);
+        } else {
+          loadQuizCase(state.quizIndex + 1, false);
+        }
+      });
+
+      dom.btnQuizRestart.addEventListener('click', () => {
+        loadQuizCase(0, true);
+        showToast('Modo Desafio reiniciado');
+      });
+
+      dom.btnQuizRefocus.addEventListener('click', () => {
+        const q = QUIZ_CASES[state.quizIndex];
+        if (q) {
+          navigateToView(q.setup);
+          showToast('Transdutor reposicionado no corte do caso');
+        }
+      });
+
+      // Redimensionamento da janela
+      window.addEventListener('resize', resizeCanvas);
+
+      // =========================================================================
+      // 17. INICIALIZAÇÃO
+      // =========================================================================
+      window.onload = function () {
+        try {
+          applyRoute('TA', false);
+          renderAtlasPanel();
+          syncUI();
+          resizeCanvas();
+          requestAnimationFrame(animate);
+        } catch (err) {
+          console.error('Erro na inicialização do Afycionados Test Drive:', err);
+        }
+      };
+    })();
+  </script>
+</body>
+</html>
